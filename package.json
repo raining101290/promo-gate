@@ -21,7 +21,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed-admin": "tsx prisma/seed-admin.ts",
     "staff:create": "tsx scripts/create-staff.ts",
-    "sms:test": "tsx --conditions=react-server scripts/sms-test.ts"
+    "sms:test": "tsx --conditions=react-server scripts/sms-test.ts",
+    "email:test": "tsx --conditions=react-server scripts/email-test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1165.0",

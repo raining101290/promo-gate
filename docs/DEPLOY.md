@@ -27,7 +27,10 @@ separate values). Never reuse dev secrets.
 | `SMS_API_KEY`, `SMS_SENDER_ID` | yes | From the BulkSMSBD panel (sender ID e.g. `Hosting.com`). See §6. |
 | `SMS_API_URL` | no | Default `https://bulksmsbd.net/api/smsapi` (always HTTPS: the key is in the request). |
 | `SMS_LOW_BALANCE` | no | Credit (taka) below which Admin → SMS shows a warning. Default `200`. |
-| `EMAIL_DRIVER` | yes | ⚠ Only `console`/`file` exist today and both refuse to run in production. An API email driver (Resend, planned) must be added before launch: with `OTP_CHANNELS=EMAIL`, nobody can log in without it. |
+| `EMAIL_DRIVER` | yes | `resend`. Login codes are email-only (`OTP_CHANNELS=EMAIL`), so **nobody can log in without it**. |
+| `RESEND_API_KEY` | yes | Resend → API Keys. Use a **Sending access** key restricted to the sending domain. |
+| `EMAIL_FROM` | yes | e.g. `Hosting.com Perks <perks@mail.hosting.com>`. The domain must be **verified** in Resend (see §6b). |
+| `EMAIL_REPLY_TO` | no | Where customer replies go, e.g. `support@hosting.com`. |
 | `STORAGE_DRIVER` | yes | `s3` |
 | `STORAGE_BUCKET` | yes | e.g. `perks-receipts` |
 | `STORAGE_ENDPOINT` | yes | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
@@ -151,6 +154,18 @@ Details and a system-cron line: `docs/OPERATIONS.md`.
 - Verify from the server itself: `npm run sms:test` (credit) then `npm run sms:test -- 01XXXXXXXXX` (one real SMS).
   Watch Admin → SMS for FAILED rows after launch.
 - Budget alert: set a low-balance alert at the gateway; failed sends are retried twice, then logged.
+
+## 6b. Email (Resend)
+
+1. Resend → **Domains** → add a sending subdomain such as `mail.hosting.com` (a subdomain keeps Perks' sending
+   reputation separate from staff mail). Region: closest available to Bangladesh.
+2. Add the DNS records Resend shows (SPF `TXT`, DKIM `TXT`/`CNAME`, MX for bounces) at the DNS host, wait for **Verified**.
+   Also add a DMARC record for the domain if hosting.com doesn't have one (`v=DMARC1; p=none; rua=mailto:...` to start).
+3. Resend → **API Keys** → create a key with **Sending access**, limited to that domain → `RESEND_API_KEY`.
+4. Test from a trusted machine: `npm run email:test -- you@hosting.com`. Until the domain is verified, Resend only
+   delivers to your own Resend login address (error 403 otherwise).
+5. After launch, failed sends show in the server logs as `[email] failed ...` and in Resend → **Emails / Logs**.
+   Login codes are mostly opened within a minute: if customers report missing codes, check spam placement and DMARC.
 
 ## 7. Backups
 
