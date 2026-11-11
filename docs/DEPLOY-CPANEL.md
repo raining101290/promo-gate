@@ -1,8 +1,7 @@
 # Deploying to cPanel (perks.cloudhosti.com)
 
-Every push to `main` runs CI (typecheck, lint, auth check, unit + E2E tests, build). **Deploys happen only on
-request:** GitHub → Actions → **CI** → **Run workflow** on `main` (or `gh workflow run ci.yml --ref main`). That
-run repeats the checks, then the **deploy** job builds a standalone bundle, copies it to the server over SSH and
+Every push to `main` runs CI (typecheck, lint, auth check, unit + E2E tests, build). If it all passes, the
+**deploy** job **deploys automatically**: it builds a standalone bundle, copies it to the server over SSH and
 runs `deploy/activate.sh` there. That script:
 
 1. installs the Prisma CLI for this release (cached),
@@ -143,7 +142,7 @@ gh variable set APP_URL --body https://perks.cloudhosti.com
 The deploy job is skipped while `CPANEL_HOST` is empty.
 
 ### 7. First deploy + first admin
-GitHub → **Actions → CI → Run workflow** on `main`. When the deploy job is green, create the
+Push to `main`, or GitHub → **Actions → CI → Run workflow** on `main`. When the deploy job is green, create the
 first admin in cPanel **Terminal**:
 
 ```bash
@@ -172,8 +171,8 @@ then, Resend only delivers to your own Resend login address.
 
 ## Day to day
 
-- **Deploy:** push to `main` (checks only), then Actions → CI → **Run workflow** on `main`. Watch it under
-  GitHub → Actions. A failed check means nothing is deployed. Re-running it redeploys the same code.
+- **Deploy:** push to `main`; it goes live by itself once the checks pass. Watch it under GitHub → Actions. A
+  failed check means nothing is deployed. **Redeploy the same code:** Actions → CI → Run workflow.
 - **Roll back the code:** in Terminal, `bash ~/perks/current/deploy/rollback.sh`, then open the site once.
   Database migrations are not undone, so a migration must keep working with the previous release: add columns
   first, remove them in a later release.
