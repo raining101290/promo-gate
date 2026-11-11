@@ -1,0 +1,376 @@
+// Hosting.com Perks data model.
+// Conventions: money = Int paisa (1 BDT = 100). Percentages = Int basis points (15% = 1500).
+// All DateTime values are UTC; convert to Asia/Dhaka only for display.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Enums ----------
+
+enum OtpChannel {
+  EMAIL
+  SMS
+}
+
+enum StaffRole {
+  SUPPORT
+  FINANCE
+  ADMIN
+}
+
+enum OfferType {
+  FIXED
+  PERCENT
+}
+
+enum OfferRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VoucherStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  VOID
+}
+
+enum PayoutMethod {
+  BANK
+  BKASH
+}
+
+enum ContractStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum RedemptionStatus {
+  CLAIMED
+  RECEIPT_UPLOADED
+  VERIFIED
+  DISPUTED
+  REJECTED
+}
+
+enum SmsStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum SettlementStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+enum ActorType {
+  CUSTOMER
+  STAFF
+  SYSTEM
+}
+
+// ---------- People ----------
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  /// E.164, e.g. +8801712345678
+  phone     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  /// Soft delete: PII is scrubbed, redemptions kept for accounting. Deleted customers can't log in.
+  deletedAt DateTime?
+
+  otpCodes      OtpCode[]
+  offerRequests OfferRequest[]
+  vouchers      Voucher[]
+  redemptions   Redemption[]
+}
+
+model OtpCode {
+  id         String     @id @default(cuid())
+  customerId String?
+  /// Email address or E.164 phone the code was sent to
+  target     String
+  channel    OtpChannel
+  codeHash   String
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([target, createdAt])
+}
+
+model StaffUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         StaffRole
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  /// Set when an admin creates the account or resets the password: must pick their own before doing anything.
+  mustChangePassword Boolean   @default(false)
+  /// Embedded in the staff session cookie; bumping it logs the user out everywhere (reset, deactivate, own change).
+  sessionVersion     Int       @default(0)
+  lastLoginAt        DateTime?
+  passwordChangedAt  DateTime?
+
+  reviewedOfferRequests OfferRequest[]
+  verifiedRedemptions   Redemption[]
+  createdSettlements    Settlement[] @relation("SettlementCreatedBy")
+  approvedSettlements   Settlement[] @relation("SettlementApprovedBy")
+  paidSettlements       Settlement[] @relation("SettlementPaidBy")
+}
+
+// ---------- Offers & vouchers ----------
+
+model Campaign {
+  id               String    @id @default(cuid())
+  name             String
+  offerType        OfferType
+  /// FIXED: paisa. PERCENT: basis points.
+  value            Int
+  /// Cap for PERCENT offers, paisa
+  maxDiscount      Int?
+  /// Minimum bill to redeem, paisa
+  minBill          Int?
+  validityDays     Int
+  /// Total discount budget across all redemptions, paisa
+  totalBudget      Int?
+  perCustomerLimit Int?
+  startsAt         DateTime
+  endsAt           DateTime?
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  vouchers Voucher[]
+}
+
+model OfferRequest {
+  id             String             @id @default(cuid())
+  customerId     String
+  invoiceNumber  String             @unique
+  submittedEmail String
+  submittedPhone String
+  status         OfferRequestStatus @default(PENDING)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  rejectReason   String?
+  createdAt      DateTime           @default(now())
+
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  reviewedBy StaffUser? @relation(fields: [reviewedById], references: [id])
+  voucher    Voucher?
+
+  @@index([customerId])
+  @@index([reviewedById])
+  @@index([status, createdAt])
+}
+
+model Voucher {
+  id             String        @id @default(cuid())
+  offerRequestId String        @unique
+  campaignId     String
+  customerId     String
+  /// Random, unguessable, 24+ chars (base64url)
+  code           String        @unique
+  status         VoucherStatus @default(ACTIVE)
+  issuedAt       DateTime      @default(now())
+  expiresAt      DateTime
+  createdAt      DateTime      @default(now())
+
+  // Terms snapshotted from the campaign at issue time, so later campaign edits never change
+  // an issued voucher. Same units as Campaign (paisa / basis points).
+  offerType   OfferType
+  value       Int
+  maxDiscount Int?
+  minBill     Int?
+  /// Max liability of this voucher in paisa (FIXED: value, PERCENT: maxDiscount). Summed for budgets.
+  faceValue   Int
+
+  /// Set after too many wrong branch PINs; redemption is refused until this time passes.
+  pinLockedUntil DateTime?
+  /// Set when the "expires in 3 days" reminder was claimed for sending (sent at most once).
+  reminderSentAt DateTime?
+
+  offerRequest OfferRequest @relation(fields: [offerRequestId], references: [id])
+  campaign     Campaign     @relation(fields: [campaignId], references: [id])
+  customer     Customer     @relation(fields: [customerId], references: [id])
+  redemption   Redemption?
+
+  @@index([campaignId])
+  @@index([customerId])
+  @@index([status, createdAt])
+  @@index([status, expiresAt])
+}
+
+// ---------- Partners ----------
+
+model Partner {
+  id             String         @id @default(cuid())
+  name           String
+  contactName    String
+  /// E.164
+  contactPhone   String
+  payoutMethod   PayoutMethod
+  payoutAccount  String
+  contractStatus ContractStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+
+  branches    Branch[]
+  settlements Settlement[]
+}
+
+model Branch {
+  id         String   @id @default(cuid())
+  partnerId  String
+  name       String
+  area       String
+  address    String
+  /// E.164; receives redemption alerts
+  smsPhone   String
+  /// Short slug used in the printed QR URL: /r/<branchCode>
+  branchCode String   @unique
+  /// Hash of the 4-digit cashier PIN; plaintext is never stored
+  pinHash    String
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  partner     Partner      @relation(fields: [partnerId], references: [id])
+  redemptions Redemption[]
+
+  @@index([partnerId])
+}
+
+// ---------- Redemption & settlement ----------
+
+model Redemption {
+  id              String           @id @default(cuid())
+  voucherId       String           @unique
+  branchId        String
+  customerId      String
+  /// All amounts in paisa. customerPaid = billAmount - discountAmount
+  billAmount      Int
+  discountAmount  Int
+  customerPaid    Int
+  posReceiptNo    String?
+  receiptImageKey String?
+  status          RedemptionStatus @default(CLAIMED)
+  verifiedById    String?
+  /// Set on verify / dispute / reject
+  reviewedAt      DateTime?
+  /// Staff reason for DISPUTED / REJECTED
+  reviewNote      String?
+  settlementId    String?
+  redeemedAt      DateTime         @default(now())
+  createdAt       DateTime         @default(now())
+
+  voucher    Voucher     @relation(fields: [voucherId], references: [id])
+  branch     Branch      @relation(fields: [branchId], references: [id])
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  verifiedBy StaffUser?  @relation(fields: [verifiedById], references: [id])
+  settlement Settlement? @relation(fields: [settlementId], references: [id])
+  smsLogs    SmsLog[]
+
+  @@index([branchId])
+  @@index([customerId])
+  @@index([verifiedById])
+  @@index([settlementId])
+  @@index([status, createdAt])
+}
+
+model SmsLog {
+  id           String    @id @default(cuid())
+  redemptionId String?
+  /// E.164
+  toPhone      String
+  body         String
+  provider     String
+  providerRef  String?
+  status       SmsStatus @default(QUEUED)
+  /// 1-based try number; each retry is its own row
+  attempt      Int       @default(1)
+  /// Provider/transport error for FAILED attempts
+  error        String?
+  /// e.g. otp, branch_redemption, customer_receipt, review
+  purpose      String?
+  createdAt    DateTime  @default(now())
+
+  redemption Redemption? @relation(fields: [redemptionId], references: [id])
+
+  @@index([redemptionId])
+}
+
+model Settlement {
+  id           String           @id @default(cuid())
+  partnerId    String
+  periodStart  DateTime
+  periodEnd    DateTime
+  /// Sum of discountAmount of included redemptions, paisa
+  totalAmount  Int              @default(0)
+  status       SettlementStatus @default(DRAFT)
+  /// Creator may not approve their own draft (four-eyes rule)
+  createdById  String
+  approvedById String?
+  approvedAt   DateTime?
+  paidById     String?
+  paidAt       DateTime?
+  /// Bank transaction reference or bKash TrxID
+  paymentRef   String?
+  createdAt    DateTime         @default(now())
+
+  partner     Partner      @relation(fields: [partnerId], references: [id])
+  createdBy   StaffUser    @relation("SettlementCreatedBy", fields: [createdById], references: [id])
+  approvedBy  StaffUser?   @relation("SettlementApprovedBy", fields: [approvedById], references: [id])
+  paidBy      StaffUser?   @relation("SettlementPaidBy", fields: [paidById], references: [id])
+  redemptions Redemption[]
+
+  @@index([partnerId])
+  @@index([createdById])
+  @@index([approvedById])
+  @@index([paidById])
+  @@index([status, createdAt])
+}
+
+// ---------- Audit ----------
+
+model AuditLog {
+  id         String    @id @default(cuid())
+  actorType  ActorType
+  /// Customer or StaffUser id; "system" for SYSTEM
+  actorId    String
+  action     String
+  entityType String
+  entityId   String
+  meta       Json      @default("{}")
+  createdAt  DateTime  @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorType, actorId])
+}
+
+// ---------- Infra ----------
+
+/// One row per counted hit for the DB rate limiter (src/server/rate-limit.ts). Old rows are pruned on write.
+model RateLimitHit {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+}

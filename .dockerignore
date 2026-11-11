@@ -1,0 +1,17 @@
+node_modules
+.next
+.next-e2e
+.git
+.github
+.env
+.env.*
+!.env.example
+.storage
+.storage-test
+.outbox*.jsonl
+src/generated
+public/vendor
+test-results
+playwright-report
+tsconfig.tsbuildinfo
+Dockerfile

@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: promo
+          POSTGRES_PASSWORD: promo
+          POSTGRES_DB: promo_gate_test # name must end in _test: the test reset refuses anything else
+          TZ: UTC
+        ports: ["5435:5432"]
+        options: >-
+          --health-cmd "pg_isready -U promo -d promo_gate_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+
+    env:
+      CI: "true"
+      DATABASE_URL: postgresql://promo:promo@localhost:5435/promo_gate_test?schema=public
+      TEST_DATABASE_URL: postgresql://promo:promo@localhost:5435/promo_gate_test?schema=public
+      SESSION_SECRET: ci-only-session-secret-0123456789abcdef
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci # postinstall: prisma generate + self-hosted QR wasm
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Every API route has an auth check
+        run: npm run check:auth
+
+      - name: Unit tests (resets the test DB)
+        run: npm test
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E happy path (390px)
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+
+      - name: Production build
+        run: npm run build

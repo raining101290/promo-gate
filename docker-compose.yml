@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: promo-gate-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: promo
+      POSTGRES_PASSWORD: promo
+      POSTGRES_DB: promo_gate
+      TZ: UTC
+      PGTZ: UTC
+    # Host port 5434 avoids clashing with a locally installed Postgres on 5432.
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promo -d promo_gate"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  # Throwaway database for unit + E2E tests (reset on every run; data lives in RAM).
+  db-test:
+    image: postgres:16-alpine
+    container_name: promo-gate-db-test
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: promo
+      POSTGRES_PASSWORD: promo
+      POSTGRES_DB: promo_gate_test
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5435:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U promo -d promo_gate_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
