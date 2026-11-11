@@ -1,8 +1,9 @@
 # Deploying to cPanel (perks.cloudhosti.com)
 
-Every push to `main` runs CI (typecheck, lint, auth check, unit + E2E tests, build). If it all passes, the
-**deploy** job builds a standalone bundle, copies it to the server over SSH and runs
-`deploy/activate.sh` there. That script:
+Every push to `main` runs CI (typecheck, lint, auth check, unit + E2E tests, build). **Deploys happen only on
+request:** GitHub → Actions → **CI** → **Run workflow** on `main` (or `gh workflow run ci.yml --ref main`). That
+run repeats the checks, then the **deploy** job builds a standalone bundle, copies it to the server over SSH and
+runs `deploy/activate.sh` there. That script:
 
 1. installs the Prisma CLI for this release (cached),
 2. runs `prisma migrate deploy`,
@@ -142,7 +143,7 @@ gh variable set APP_URL --body https://perks.cloudhosti.com
 The deploy job is skipped while `CPANEL_HOST` is empty.
 
 ### 7. First deploy + first admin
-Push to `main`, or GitHub → **Actions → CI → Run workflow** on `main`. When the deploy job is green, create the
+GitHub → **Actions → CI → Run workflow** on `main`. When the deploy job is green, create the
 first admin in cPanel **Terminal**:
 
 ```bash
@@ -171,14 +172,14 @@ then, Resend only delivers to your own Resend login address.
 
 ## Day to day
 
-- **Deploy:** merge or push to `main`. Watch it under GitHub → Actions. A failed check means nothing is deployed.
-- **Redeploy the same code:** Actions → CI → Run workflow.
+- **Deploy:** push to `main` (checks only), then Actions → CI → **Run workflow** on `main`. Watch it under
+  GitHub → Actions. A failed check means nothing is deployed. Re-running it redeploys the same code.
 - **Roll back the code:** in Terminal, `bash ~/perks/current/deploy/rollback.sh`, then open the site once.
   Database migrations are not undone, so a migration must keep working with the previous release: add columns
   first, remove them in a later release.
 - **Logs:** Setup Node.js App shows the app; errors go to `~/perks/app/stderr.log` (if your host enables it) or
   cPanel → **Errors**. Restart: Setup Node.js App → Restart, or `touch ~/perks/app/tmp/restart.txt`.
-- **Visitor IPs:** Passenger appends the visitor's address to `X-Forwarded-For`; `app.cjs` keeps only that last
+- **Visitor IPs:** the web server (LiteSpeed) appends the visitor's address to `X-Forwarded-For`; `app.cjs` keeps only that last
   entry, so visitors can't fake the IP that rate limits use. Leave `CLIENT_IP_HEADER` unset. If you ever put
   Cloudflare or another proxy in front, change this first: the last entry would then be the proxy's.
 - **Health:** `https://perks.cloudhosti.com/api/health` → `{"ok":true,"db":"ok","release":"…"}`. Point an

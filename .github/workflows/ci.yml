@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch: # "Run workflow" on main = test + redeploy
+  workflow_dispatch: # Actions -> CI -> "Run workflow" on main = test + deploy (the only way to deploy)
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -78,11 +78,11 @@ jobs:
       - name: Production build
         run: npm run build
 
-  # Deploys main to the cPanel server once every check above passed. Skipped until the repository variable
-  # CPANEL_HOST is set. One-time server setup: docs/DEPLOY-CPANEL.md.
+  # Deploys main to the cPanel server, ONLY when started by hand (Run workflow / `gh workflow run ci.yml --ref main`)
+  # and only after every check above passed. Pushes just run the checks. Server setup: docs/DEPLOY-CPANEL.md.
   deploy:
     needs: ci
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CPANEL_HOST != ''
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && vars.CPANEL_HOST != ''
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
