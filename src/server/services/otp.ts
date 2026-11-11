@@ -7,6 +7,7 @@ import type { LoginTarget } from "@/lib/schemas/auth";
 import { db } from "@/server/db";
 import { sessionSecret } from "@/server/env";
 import { getEmailProvider } from "@/server/providers/email";
+import { otpChannelEnabled } from "@/server/otp-channels";
 import { sendSms } from "@/server/services/notifications";
 import { limit } from "@/server/rate-limit";
 import { writeAudit } from "@/server/services/audit";
@@ -15,8 +16,7 @@ export const OTP_TTL_MS = 5 * 60 * 1000;
 export const OTP_MAX_ATTEMPTS = 5;
 
 /** Shown for every accepted request, whether or not a customer exists for the target. */
-export const OTP_SENT_MESSAGE =
-  "If this email or phone can receive codes, we've sent a 6-digit code. It expires in 5 minutes.";
+export const OTP_SENT_MESSAGE = "If this email or phone can receive codes, we've sent a 6-digit code. It expires in 5 minutes.";
 
 function hashCode(target: string, code: string): string {
   return createHmac("sha256", sessionSecret()).update(`${target}:${code}`).digest("hex");
@@ -32,10 +32,12 @@ function mask({ channel, target }: LoginTarget): string {
   return channel === "EMAIL" ? maskEmail(target) : maskPhone(target);
 }
 
-export type RequestOtpResult = { ok: true; message: string } | { ok: false; reason: "rate_limited" };
+export type RequestOtpResult = { ok: true; message: string } | { ok: false; reason: "rate_limited" | "channel_disabled" };
 
 export async function requestOtp(login: LoginTarget, ctx: { ip: string }): Promise<RequestOtpResult> {
   const { channel, target } = login;
+  // Checked before rate limits so a disabled channel never costs the customer an attempt.
+  if (!otpChannelEnabled(channel)) return { ok: false, reason: "channel_disabled" };
   const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
   const now = new Date();
 
@@ -84,8 +86,7 @@ export type VerifyOtpResult =
   | { ok: false; reason: "expired" | "locked" | "no_customer" | "rate_limited" };
 
 export async function verifyOtp(login: LoginTarget, code: string, ctx: { ip: string }): Promise<VerifyOtpResult> {
-  const throttled =
-    !(await limit("otpVerifyIp", ctx.ip)).allowed || !(await limit("otpVerifyTarget", login.target)).allowed;
+  const throttled = !(await limit("otpVerifyIp", ctx.ip)).allowed || !(await limit("otpVerifyTarget", login.target)).allowed;
   const result: VerifyOtpResult = throttled ? { ok: false, reason: "rate_limited" } : await checkCode(login, code);
 
   await writeAudit({

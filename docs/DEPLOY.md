@@ -22,11 +22,12 @@ separate values). Never reuse dev secrets.
 | `DIRECT_DATABASE_URL` | yes | **Direct** URL (Neon non-pooler host / Supabase port 5432). Only migrations and admin scripts use it. |
 | `DB_POOL_MAX` | no | Connections per serverless instance. Default `5`. |
 | `CRON_SECRET` | yes | `openssl rand -hex 24`. Vercel Cron sends it automatically. |
-| `SMS_DRIVER` | yes | `bulksmsbd` |
+| `OTP_CHANNELS` | no | `EMAIL` (default): login codes by email only. `EMAIL,SMS` lets customers choose SMS too (needs a working SMS gateway). |
+| `SMS_DRIVER` | yes | `bulksmsbd`, or `off` while there is no SMS gateway (branch alerts and customer SMS are then skipped; customers still get emails). |
 | `SMS_API_KEY`, `SMS_SENDER_ID` | yes | From the BulkSMSBD panel (sender ID e.g. `Hosting.com`). See §6. |
 | `SMS_API_URL` | no | Default `https://bulksmsbd.net/api/smsapi` (always HTTPS: the key is in the request). |
 | `SMS_LOW_BALANCE` | no | Credit (taka) below which Admin → SMS shows a warning. Default `200`. |
-| `EMAIL_DRIVER` | yes | ⚠ Only `console`/`file` exist today and both refuse to run in production. An SMTP/API email driver must be added before launch, or customers can only log in by SMS. |
+| `EMAIL_DRIVER` | yes | ⚠ Only `console`/`file` exist today and both refuse to run in production. An API email driver (Resend, planned) must be added before launch: with `OTP_CHANNELS=EMAIL`, nobody can log in without it. |
 | `STORAGE_DRIVER` | yes | `s3` |
 | `STORAGE_BUCKET` | yes | e.g. `perks-receipts` |
 | `STORAGE_ENDPOINT` | yes | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |

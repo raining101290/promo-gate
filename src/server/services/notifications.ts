@@ -19,11 +19,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * `logBody` replaces the stored text when the message is secret (OTP codes never reach the DB).
  * Caveat: a timeout after the gateway accepted the message can cause a duplicate on retry.
  */
-export async function sendSms(
-  to: string,
-  body: string,
-  opts: { purpose: SmsPurpose; redemptionId?: string; logBody?: string },
-): Promise<boolean> {
+export async function sendSms(to: string, body: string, opts: { purpose: SmsPurpose; redemptionId?: string; logBody?: string }): Promise<boolean> {
+  // SMS switched off (no gateway yet): skip quietly, nothing to log or retry.
+  if (process.env.SMS_DRIVER === "off") return false;
   const attempts = SMS_RETRY_DELAYS_MS.length + 1;
   for (let attempt = 1; attempt <= attempts; attempt++) {
     let provider = "unconfigured";
@@ -92,10 +90,14 @@ export type CustomerMessage = {
   redemptionId?: string;
 };
 
-/** One message to a customer's own phone (SMS, retried + logged) and email. Never throws. */
-export async function notifyCustomer(customerId: string, msg: CustomerMessage): Promise<void> {
+/**
+ * One message to a customer's own phone (SMS, retried + logged; skipped when SMS is off) and email.
+ * Never throws; true if at least one channel accepted it.
+ */
+export async function notifyCustomer(customerId: string, msg: CustomerMessage): Promise<boolean> {
   const customer = await db.customer.findUnique({ where: { id: customerId }, select: { email: true, phone: true } });
-  if (!customer) return;
-  await sendSms(customer.phone, msg.sms, { purpose: msg.purpose, redemptionId: msg.redemptionId });
-  await sendEmail(customer.email, msg.emailSubject, msg.email);
+  if (!customer) return false;
+  const sms = await sendSms(customer.phone, msg.sms, { purpose: msg.purpose, redemptionId: msg.redemptionId });
+  const email = await sendEmail(customer.email, msg.emailSubject, msg.email);
+  return sms || email;
 }

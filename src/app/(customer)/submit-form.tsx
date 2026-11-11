@@ -38,13 +38,13 @@ function displayTarget(t: { channel: "EMAIL" | "SMS"; target: string }) {
   return t.channel === "SMS" && t.target.startsWith("+880") ? `0${t.target.slice(4)}` : t.target;
 }
 
-export function SubmitForm() {
+export function SubmitForm({ channels }: { channels: OtpChannel[] }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<OfferRequestField, string>>({ invoiceNumber: "", email: "", phone: "" });
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [otpChannel, setOtpChannel] = useState<OtpChannel>("SMS");
+  const [otpChannel, setOtpChannel] = useState<OtpChannel>(channels[0] ?? "EMAIL");
   const [otp, setOtp] = useState<SubmitResponse["otp"]>(null);
 
   async function submit(e: FormEvent) {
@@ -124,7 +124,7 @@ export function SubmitForm() {
           )}
         </div>
       ))}
-      <ChannelToggle value={otpChannel} onChange={setOtpChannel} label="Send my login code by" />
+      {channels.length > 1 && <ChannelToggle value={otpChannel} onChange={setOtpChannel} label="Send my login code by" />}
       {error && (
         <p className="text-destructive text-sm" role="alert">
           {error}

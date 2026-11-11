@@ -11,11 +11,14 @@ export async function POST(req: Request) {
   }
 
   const result = await requestOtp(parsed.data.target, { ip: clientIp(req.headers) });
-  if (!result.ok) {
+  if (!result.ok && result.reason === "channel_disabled") {
     return NextResponse.json(
-      { ok: false, error: "Too many codes requested. Please wait 15 minutes and try again." },
-      { status: 429 },
+      { ok: false, error: "Login codes are sent by email. Enter the email address from your hosting.com order." },
+      { status: 400 },
     );
+  }
+  if (!result.ok) {
+    return NextResponse.json({ ok: false, error: "Too many codes requested. Please wait 15 minutes and try again." }, { status: 429 });
   }
   return NextResponse.json({ ok: true, message: result.message, channel: parsed.data.target.channel });
 }

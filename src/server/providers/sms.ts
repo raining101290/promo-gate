@@ -153,6 +153,9 @@ export function getSmsProvider(): SmsProvider {
       instance = new BulkSmsBdDriver({ url, balanceUrl, apiKey, senderId });
       return instance;
     }
+    case "off":
+      // sendSms short-circuits before reaching here; anything else asking for a provider gets a clear error.
+      throw new Error("SMS is switched off (SMS_DRIVER=off)");
     case "file":
       if (isProduction) throw new Error("SMS_DRIVER=file is not allowed in production");
       instance = new FileSmsDriver();

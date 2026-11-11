@@ -37,7 +37,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             items: [
               "**Customer submits** their invoice number, email and phone on the home page. This creates a Request with status **Pending**.",
               "**Support reviews** the request in **Requests** against the billing system, then approves or rejects it. Approving issues a **Voucher** from the chosen Campaign.",
-              "**Customer logs in** with a one-time code (OTP) sent by email or SMS, and sees the active voucher.",
+              "**Customer logs in** with a one-time code (OTP) sent by **email**, and sees the active voucher.",
               "**At the café**, the customer scans the QR on the counter **standee**, which opens `/r/<branch code>`. They type the bill amount, and the screen shows the discount.",
               "**The cashier types the branch PIN** on the customer's phone. The voucher becomes **Redeemed** and the phone shows a green success screen. The branch also gets an SMS with the amounts and a reference like `R-7K2M9Q`.",
               'The café rings up the discount in its POS as payment type **"Hosting.com Voucher"**.',
@@ -783,7 +783,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "list",
             items: [
-              "Customers don't have passwords. They choose **Mobile (SMS)** or **Email**, type that contact, and get a **6-digit code**, valid for **5 minutes**.",
+              "Customers don't have passwords. They type their **email address** and get a **6-digit code by email**, valid for **5 minutes**. (Login by SMS is switched off for now; if it is switched on later, the login screen shows a Mobile (SMS) / Email choice.)",
               "They do **not** need the invoice number to log in. The invoice is only for claiming a new voucher.",
               "A code goes only to a contact already on the account. Typing a new email/phone never changes the account (this stops account takeover).",
               "Once logged in, a customer stays signed in on that phone for 30 days.",
@@ -806,8 +806,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
               ],
               [
                 '"The code never arrived"',
-                "Spam folder, typo in contact, SMS delay or gateway error",
-                "For SMS: search their number on the **SMS** screen; a failure shows the reason. Otherwise check spam, or pick the other option (Mobile/SMS or Email) on the login screen.",
+                "Spam/promotions folder, typo in the email address, or a different email than the one on the invoice",
+                'Ask them to check spam/promotions and search their inbox for "Hosting.com Perks login code". Search Requests by their email to confirm which address is on file.',
               ],
               [
                 '"Too many attempts"',
@@ -820,7 +820,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "reply",
             label: "Reply: code not arriving",
-            text: "Hi! Login codes are sent to the email or phone you used when you submitted your invoice. Please check your spam/promotions folder, or choose the other option (Mobile/SMS or Email) on the login screen. Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
+            text: "Hi! Login codes are emailed to the address you used when you submitted your invoice. Please check your spam/promotions folder and search for \"Hosting.com Perks login code\". Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
           },
         ],
       },
@@ -1070,8 +1070,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
             kind: "list",
             items: [
               "Vouchers past their expiry become **Expired**.",
-              "Customers get an expiry reminder **3 days before** a voucher expires (once per voucher).",
-              "Every SMS is retried up to 3 times. Each attempt is logged, so failed messages can be investigated.",
+              "Customers get an expiry reminder by email (and SMS when enabled) **3 days before** a voucher expires (once per voucher).",
+              "Every SMS is retried up to 3 times. Each attempt is logged, so failed messages can be investigated. While SMS is switched off, no SMS are sent or logged.",
             ],
           },
         ],

@@ -8,9 +8,8 @@ test("invoice → approval → redeem at 390px → receipt → verified → sett
   const invoice = `E2E-${run}`;
   const email = `e2e-${run}@test.local`;
   const phoneLocal = `017${run}`;
-  const phoneE164 = `+88${phoneLocal}`;
 
-  await test.step("customer submits an invoice and logs in with the SMS code", async () => {
+  await test.step("customer submits an invoice and logs in with the emailed code", async () => {
     await page.goto("/");
     await page.locator("#invoiceNumber").fill(invoice.toLowerCase());
     await page.locator("#email").fill(email);
@@ -18,7 +17,7 @@ test("invoice → approval → redeem at 390px → receipt → verified → sett
     const sentAfter = Date.now();
     await page.getByRole("button", { name: "Submit invoice" }).click();
     await expect(page.getByRole("status")).toContainText("Invoice received");
-    await page.locator("#code").fill(await readOtp(phoneE164, sentAfter));
+    await page.locator("#code").fill(await readOtp(email, sentAfter));
     await page.getByRole("button", { name: "Verify and continue" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByTestId("requests")).toContainText(invoice);
@@ -60,7 +59,10 @@ test("invoice → approval → redeem at 390px → receipt → verified → sett
 
   await test.step("support verifies the redemption against the receipt", async () => {
     await support.goto("/admin/redemptions?tab=review");
-    await support.getByRole("row", { name: new RegExp(email) }).getByRole("link", { name: "Review" }).click();
+    await support
+      .getByRole("row", { name: new RegExp(email) })
+      .getByRole("link", { name: "Review" })
+      .click();
     await expect(support.getByTestId("receipt-image")).toBeVisible();
     await support.getByTestId("verify").click();
     await expect(support.getByText("Verified by")).toBeVisible();
@@ -69,7 +71,10 @@ test("invoice → approval → redeem at 390px → receipt → verified → sett
   const finance = await staffPage(browser, E2E.staff.finance);
   await test.step("finance drafts the settlement (৳500), admin approves, finance marks it paid", async () => {
     await finance.goto("/admin/settlements");
-    await finance.getByRole("row", { name: new RegExp(E2E.partnerName) }).getByTestId("create-draft").click();
+    await finance
+      .getByRole("row", { name: new RegExp(E2E.partnerName) })
+      .getByTestId("create-draft")
+      .click();
     await expect(finance).toHaveURL(/\/admin\/settlements\/[a-z0-9]+$/);
     await expect(finance.getByTestId("settlement-total")).toHaveText("৳500");
     await expect(finance.getByTestId("four-eyes")).toBeVisible(); // creator can't approve

@@ -23,9 +23,10 @@ const CHANNELS: Record<Channel, { label: string; placeholder: string; inputMode:
   EMAIL: { label: "Email address", placeholder: "you@example.com", inputMode: "email", autoComplete: "email", error: "Enter a valid email address" },
 };
 
-export function LoginForm({ nextPath }: { nextPath: string }) {
+export function LoginForm({ nextPath, channels }: { nextPath: string; channels: Channel[] }) {
   const [step, setStep] = useState<"target" | "code">("target");
-  const [channel, setChannel] = useState<Channel>("SMS");
+  const [channel, setChannel] = useState<Channel>(channels[0] ?? "EMAIL");
+  const choice = channels.length > 1;
   const [target, setTarget] = useState("");
   const [pending, setPending] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -55,20 +56,26 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       <CardHeader>
         <CardTitle>{step === "target" ? "Log in" : "Enter your code"}</CardTitle>
         <CardDescription>
-          {step === "target" ? "Get a login code by SMS or email. Use the mobile number or email from your hosting.com order." : info}
+          {step === "target"
+            ? choice
+              ? "Get a login code by SMS or email. Use the mobile number or email from your hosting.com order."
+              : "We'll email you a login code. Use the email address from your hosting.com order."
+            : info}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {step === "target" ? (
           <form onSubmit={requestCode} className="space-y-4" noValidate>
-            <ChannelToggle
-              value={channel}
-              onChange={(c) => {
-                setChannel(c);
-                setTarget("");
-                setError(null);
-              }}
-            />
+            {choice && (
+              <ChannelToggle
+                value={channel}
+                onChange={(c) => {
+                  setChannel(c);
+                  setTarget("");
+                  setError(null);
+                }}
+              />
+            )}
             <div className="space-y-2">
               <Label htmlFor="target">{CHANNELS[channel].label}</Label>
               <Input

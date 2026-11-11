@@ -6,6 +6,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db";
 import { limit } from "@/server/rate-limit";
 import { writeAudit } from "@/server/services/audit";
+import { otpChannelEnabled } from "@/server/otp-channels";
 import { requestOtp } from "@/server/services/otp";
 
 export const DUPLICATE_INVOICE_MESSAGE = "This invoice has already been submitted";
@@ -61,7 +62,7 @@ export async function submitOfferRequest(
   // OTP only to a contact the customer already owns: the account email, or the submitted phone if it
   // is the account's phone. Honour the customer's channel choice; SMS falls back to email otherwise.
   const ownsPhone = customer.phone === input.phone;
-  const wantEmail = input.otpChannel === "EMAIL" || !ownsPhone;
+  const wantEmail = input.otpChannel === "EMAIL" || !ownsPhone || !otpChannelEnabled("SMS");
   const target: LoginTarget = wantEmail ? { channel: "EMAIL", target: customer.email } : { channel: "SMS", target: customer.phone };
   const otp = await requestOtp(target, { ip: ctx.ip });
   return { ok: true, offerRequestId, otp: { ...target, sent: otp.ok } };

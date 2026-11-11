@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { safeNextPath } from "@/lib/safe-redirect";
 import { getCustomerSession } from "@/server/auth/customer";
+import { enabledOtpChannels } from "@/server/otp-channels";
 
 import { LoginForm } from "./login-form";
 
@@ -20,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <h1 className="text-2xl font-semibold tracking-tight">Hosting.com Perks</h1>
         <p className="text-muted-foreground mt-1 text-sm">Log in to see your coffee vouchers</p>
       </div>
-      <LoginForm nextPath={nextPath} />
+      <LoginForm nextPath={nextPath} channels={enabledOtpChannels()} />
     </main>
   );
 }

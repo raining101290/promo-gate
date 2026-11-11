@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/customer/site-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCustomerSession } from "@/server/auth/customer";
+import { enabledOtpChannels } from "@/server/otp-channels";
 
 import { SubmitForm } from "./submit-form";
 
@@ -27,9 +28,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         )}
         <section>
           <h1 className="text-3xl leading-tight font-semibold tracking-tight">Coffee&apos;s on us.</h1>
-          <p className="text-muted-foreground mt-2">
-            Paid for hosting.com? Get a voucher for partner coffee shops across Bangladesh.
-          </p>
+          <p className="text-muted-foreground mt-2">Paid for hosting.com? Get a voucher for partner coffee shops across Bangladesh.</p>
         </section>
 
         <ol className="mt-6 space-y-3">
@@ -52,7 +51,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
             <CardDescription>One voucher per paid invoice.</CardDescription>
           </CardHeader>
           <CardContent>
-            <SubmitForm />
+            <SubmitForm channels={enabledOtpChannels()} />
           </CardContent>
         </Card>
 
