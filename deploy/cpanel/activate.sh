@@ -25,6 +25,10 @@ chmod 600 "$SHARED/.env"
 if [[ -z "${NODE_BIN:-}" ]]; then
   NODE_BIN="$(ls -d "$HOME"/nodevenv/perks/app/*/bin 2>/dev/null | sort -V | tail -1 || true)"
 fi
+# That bin/npm is a CloudLinux wrapper that always installs into the app's own virtualenv (and fails
+# elsewhere), so run the real Node.js it points at (/opt/alt/alt-nodejs<major>) for our tools install.
+REAL_BIN="/opt/alt/alt-nodejs$(basename "$(dirname "${NODE_BIN:-x}")")/root/usr/bin"
+if [[ -x "$REAL_BIN/npm" ]]; then NODE_BIN="$REAL_BIN"; fi
 [[ -x "${NODE_BIN:-}/node" ]] || die "no Node.js found. Create the app in cPanel > Setup Node.js App first (root perks/app), or set NODE_BIN"
 export PATH="$NODE_BIN:$PATH"
 node -e 'const [a,b]=process.versions.node.split(".").map(Number); process.exit(a>22||(a===22&&b>=18)?0:1)' \
