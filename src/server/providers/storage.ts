@@ -36,7 +36,10 @@ export class S3StorageDriver implements StorageProvider {
   readonly name = "s3";
   private readonly client: S3Client;
 
-  constructor(private readonly bucket: string, cfg: { region: string; endpoint?: string; forcePathStyle: boolean; accessKeyId: string; secretAccessKey: string }) {
+  constructor(
+    private readonly bucket: string,
+    cfg: { region: string; endpoint?: string; forcePathStyle: boolean; accessKeyId: string; secretAccessKey: string },
+  ) {
     this.client = new S3Client({
       region: cfg.region,
       endpoint: cfg.endpoint || undefined,
@@ -93,7 +96,7 @@ export class S3StorageDriver implements StorageProvider {
   }
 }
 
-/* ------------------------------- Local disk (dev) ------------------------------- */
+/* ------------------------------- Local disk ------------------------------- */
 
 type LocalOp = "put" | "get";
 type LocalToken = { op: LocalOp; key: string; exp: number; ct: string; len: number };
@@ -103,8 +106,9 @@ function localSign(t: LocalToken): string {
 }
 
 /**
- * Dev driver that mimics presigned URLs: files live under STORAGE_LOCAL_DIR and are only reachable via
- * /api/storage/local with an HMAC-signed, expiring token (see verifyLocalToken).
+ * Disk driver that mimics presigned URLs: files live under STORAGE_LOCAL_DIR and are only reachable via
+ * /api/storage/local with an HMAC-signed, expiring token (see verifyLocalToken). Used in dev, and in production
+ * on a single server (cPanel) when STORAGE_LOCAL_DIR is an absolute path outside the web root.
  */
 export class LocalStorageDriver implements StorageProvider {
   readonly name = "local";
@@ -149,7 +153,12 @@ export class LocalStorageDriver implements StorageProvider {
 
   async read(key: string) {
     const p = this.path(key);
-    const [data, meta] = await Promise.all([readFile(p), readFile(`${p}.meta.json`, "utf8").then(JSON.parse).catch(() => ({}))]);
+    const [data, meta] = await Promise.all([
+      readFile(p),
+      readFile(`${p}.meta.json`, "utf8")
+        .then(JSON.parse)
+        .catch(() => ({})),
+    ]);
     return { data, contentType: (meta as { contentType?: string }).contentType ?? "application/octet-stream" };
   }
 
@@ -210,8 +219,10 @@ export function getStorage(): StorageProvider {
   if (instance) return instance;
   const driver = process.env.STORAGE_DRIVER ?? "local";
   if (driver === "local") {
-    if (isProduction) throw new Error("STORAGE_DRIVER=local is not allowed in production");
-    instance = new LocalStorageDriver(resolve(process.env.STORAGE_LOCAL_DIR ?? "./.storage"));
+    const dir = process.env.STORAGE_LOCAL_DIR;
+    // Production must name the folder explicitly (a relative default would land inside the release and vanish on deploy).
+    if (isProduction && !dir?.startsWith("/")) throw new Error("STORAGE_DRIVER=local in production needs an absolute STORAGE_LOCAL_DIR");
+    instance = new LocalStorageDriver(resolve(dir ?? "./.storage"));
     return instance;
   }
   if (driver === "s3") {

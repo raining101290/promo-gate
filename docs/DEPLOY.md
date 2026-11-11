@@ -1,5 +1,9 @@
 # Deploying Hosting.com Perks
 
+> **Current production:** cPanel at `perks.cloudhosti.com`, deployed by GitHub Actions. See
+> [DEPLOY-CPANEL.md](DEPLOY-CPANEL.md). The settings table below applies there too, except storage
+> (`STORAGE_DRIVER=local` with an absolute `STORAGE_LOCAL_DIR`).
+
 Target: **Vercel** (app, region `sin1` Singapore) + **Neon** or **Supabase** Postgres (Singapore) +
 **Cloudflare R2** (receipt photos) + a Bangladeshi SMS gateway. A Dockerfile is included for a VPS
 instead (see the end).

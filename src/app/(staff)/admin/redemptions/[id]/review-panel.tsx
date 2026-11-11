@@ -7,6 +7,9 @@ import { textareaClass } from "@/components/staff/form-styles";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+/** How staff confirmed a sale when the customer never uploaded a receipt. */
+const NO_RECEIPT_PRESETS = ["Café confirmed the Hosting.com Voucher payment in its POS records", "Café confirmed the sale by phone"];
+
 const PRESETS = [
   "Receipt is unreadable",
   "Bill amount doesn't match the receipt",
@@ -20,6 +23,7 @@ type Action = "verify" | "dispute" | "reject";
 export function RedemptionReviewPanel({ redemptionId, hasReceipt, status }: { redemptionId: string; hasReceipt: boolean; status: string }) {
   const router = useRouter();
   const [reason, setReason] = useState("");
+  const [confirmNote, setConfirmNote] = useState("");
   const [pending, setPending] = useState<Action | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,12 +31,14 @@ export function RedemptionReviewPanel({ redemptionId, hasReceipt, status }: { re
     if (pending) return;
     setError(null);
     if (action === "reject" && !window.confirm("Reject this redemption? The partner won't be reimbursed for it.")) return;
+    if (action === "verify" && !hasReceipt && !window.confirm("Verify without a receipt? The partner will be reimbursed based on your confirmation."))
+      return;
     setPending(action);
     try {
       const res = await fetch(`/api/admin/redemptions/${redemptionId}/review`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, reason: action === "verify" ? undefined : reason.trim() || undefined }),
+        body: JSON.stringify({ action, reason: (action === "verify" ? (hasReceipt ? "" : confirmNote) : reason).trim() || undefined }),
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (data.ok) {
@@ -56,10 +62,46 @@ export function RedemptionReviewPanel({ redemptionId, hasReceipt, status }: { re
         <CardDescription>Verified redemptions become ready to pay to the partner.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button className="w-full" onClick={() => act("verify")} disabled={!!pending || !hasReceipt} data-testid="verify">
-          {pending === "verify" ? "Verifying…" : "Verify: receipt matches"}
-        </Button>
-        {!hasReceipt && <p className="text-muted-foreground -mt-2 text-xs">Verify needs a receipt photo. Dispute or reject instead.</p>}
+        {hasReceipt ? (
+          <Button className="w-full" onClick={() => act("verify")} disabled={!!pending} data-testid="verify">
+            {pending === "verify" ? "Verifying…" : "Verify: receipt matches"}
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-muted-foreground text-xs">
+              No receipt from the customer. The cashier&apos;s PIN shows the café accepted this voucher. Ask the café to check its POS for a
+              &ldquo;Hosting.com Voucher&rdquo; payment at this time and amount.
+            </p>
+            <label htmlFor="confirm-note" className="text-sm font-medium">
+              How did you confirm the sale?
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {NO_RECEIPT_PRESETS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setConfirmNote(p)}
+                  className="bg-muted hover:bg-accent rounded-full px-2.5 py-1 text-left text-xs"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            <textarea
+              id="confirm-note"
+              rows={2}
+              maxLength={300}
+              value={confirmNote}
+              onChange={(e) => setConfirmNote(e.target.value)}
+              placeholder="e.g. Café manager confirmed on phone, POS bill #1234"
+              className={textareaClass}
+            />
+            <Button className="w-full" onClick={() => act("verify")} disabled={!!pending || !confirmNote.trim()} data-testid="verify-no-receipt">
+              {pending === "verify" ? "Verifying…" : "Verify without receipt"}
+            </Button>
+            {!confirmNote.trim() && <p className="text-muted-foreground text-xs">Pick or write how you confirmed it to enable this button.</p>}
+          </div>
+        )}
 
         <div className="space-y-2 border-t pt-4">
           <label htmlFor="reason" className="text-sm font-medium">
@@ -67,12 +109,7 @@ export function RedemptionReviewPanel({ redemptionId, hasReceipt, status }: { re
           </label>
           <div className="flex flex-wrap gap-1">
             {PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setReason(p)}
-                className="bg-muted hover:bg-accent rounded-full px-2.5 py-1 text-xs"
-              >
+              <button key={p} type="button" onClick={() => setReason(p)} className="bg-muted hover:bg-accent rounded-full px-2.5 py-1 text-xs">
                 {p}
               </button>
             ))}

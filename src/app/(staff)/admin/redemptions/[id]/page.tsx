@@ -74,7 +74,12 @@ export default async function RedemptionDetailPage({ params }: { params: Promise
           <CardContent>
             {r.receiptImageKey ? (
               // eslint-disable-next-line @next/next/no-img-element -- presigned, short-lived URL (audited view)
-              <img src={receiptSrc} alt="POS receipt uploaded by the customer" className="bg-muted mx-auto max-h-[70vh] rounded-md border object-contain" data-testid="receipt-image" />
+              <img
+                src={receiptSrc}
+                alt="POS receipt uploaded by the customer"
+                className="bg-muted mx-auto max-h-[70vh] rounded-md border object-contain"
+                data-testid="receipt-image"
+              />
             ) : (
               <div className="bg-muted text-muted-foreground flex h-80 items-center justify-center rounded-md text-sm">No receipt uploaded yet.</div>
             )}
@@ -95,7 +100,9 @@ export default async function RedemptionDetailPage({ params }: { params: Promise
                 <Row label="Customer paid">{formatBDT(r.customerPaid)}</Row>
                 <Row label="POS receipt no.">{r.posReceiptNo ?? <span className="text-muted-foreground">not given</span>}</Row>
               </dl>
-              <p className="text-muted-foreground mt-2 text-xs">Check the receipt shows this bill total and a “Hosting.com Voucher” payment of {formatBDT(r.discountAmount)}.</p>
+              <p className="text-muted-foreground mt-2 text-xs">
+                Check the receipt shows this bill total and a “Hosting.com Voucher” payment of {formatBDT(r.discountAmount)}.
+              </p>
             </CardContent>
           </Card>
 
@@ -113,7 +120,8 @@ export default async function RedemptionDetailPage({ params }: { params: Promise
                   </Row>
                   {r.verifiedBy && <Row label="Verified by">{r.verifiedBy.name}</Row>}
                   {r.reviewedAt && <Row label="Reviewed">{formatDhakaDateTime(r.reviewedAt)}</Row>}
-                  {r.reviewNote && <Row label="Reason">{r.reviewNote}</Row>}
+                  {r.status === "VERIFIED" && !r.receiptImageKey && <Row label="Receipt">verified without receipt</Row>}
+                  {r.reviewNote && <Row label={r.status === "VERIFIED" ? "How confirmed" : "Reason"}>{r.reviewNote}</Row>}
                   {r.settlement && (
                     <Row label="Settlement">
                       <Link href={`/admin/settlements/${r.settlement.id}`} className="underline underline-offset-4">
@@ -146,7 +154,10 @@ export default async function RedemptionDetailPage({ params }: { params: Promise
                 </Row>
                 <Row label="Campaign">{r.voucher.campaign.name}</Row>
                 <Row label="Branch SMS">
-                  {r.smsLogs.filter((l) => l.purpose === "branch_redemption").map((l) => `${l.status.toLowerCase()} (try ${l.attempt})`).join(", ") || "—"}
+                  {r.smsLogs
+                    .filter((l) => l.purpose === "branch_redemption")
+                    .map((l) => `${l.status.toLowerCase()} (try ${l.attempt})`)
+                    .join(", ") || "—"}
                 </Row>
               </dl>
             </CardContent>

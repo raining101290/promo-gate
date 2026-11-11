@@ -9,11 +9,12 @@ import { db } from "@/server/db";
 export async function GET() {
   const started = Date.now();
   try {
-    await Promise.race([
-      db.$queryRaw`SELECT 1`,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
-    ]);
-    return NextResponse.json({ ok: true, db: "ok", dbLatencyMs: Date.now() - started, time: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } });
+    await Promise.race([db.$queryRaw`SELECT 1`, new Promise((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000))]);
+    return NextResponse.json(
+      // release: set by the cPanel startup file (deploy/cpanel/app.cjs) so a deploy can confirm the new code is live.
+      { ok: true, db: "ok", dbLatencyMs: Date.now() - started, release: process.env.PERKS_RELEASE ?? null, time: new Date().toISOString() },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch {
     return NextResponse.json({ ok: false, db: "error", time: new Date().toISOString() }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }

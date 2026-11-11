@@ -14,7 +14,7 @@ export const QUEUE_PAGE_SIZE = 50;
 export type ReviewAction = "verify" | "dispute" | "reject";
 
 const FROM: Record<ReviewAction, readonly RedemptionStatus[]> = {
-  verify: ["RECEIPT_UPLOADED", "DISPUTED"],
+  verify: ["CLAIMED", "RECEIPT_UPLOADED", "DISPUTED"],
   dispute: ["CLAIMED", "RECEIPT_UPLOADED"],
   reject: ["CLAIMED", "RECEIPT_UPLOADED", "DISPUTED"],
 };
@@ -27,7 +27,9 @@ export type ReviewResult =
 
 /**
  * Staff decision on a redemption (SUPPORT/ADMIN; caller enforces the role).
- * verify needs an uploaded receipt (that's what is being verified); dispute/reject need a reason.
+ * verify normally checks an uploaded receipt. Without one it needs a reason saying how staff confirmed the sale
+ * (e.g. the café's POS record): the cashier's PIN already proves the café accepted it, and the café must not go
+ * unpaid because a customer never uploaded. dispute/reject always need a reason.
  * Redemptions already attached to a settlement can't change.
  */
 export async function reviewRedemption(id: string, action: ReviewAction, staffId: string, reason?: string): Promise<ReviewResult> {
@@ -35,10 +37,9 @@ export async function reviewRedemption(id: string, action: ReviewAction, staffId
     const r = await tx.redemption.findUnique({ where: { id }, select: { status: true, receiptImageKey: true, settlementId: true } });
     if (!r) return { ok: false, reason: "not_found" };
     if (r.settlementId) return { ok: false, reason: "in_settlement" };
-    // Receipt check first: "no receipt yet" is the useful answer for a CLAIMED redemption.
-    if (action === "verify" && !r.receiptImageKey && r.status === "CLAIMED") return { ok: false, reason: "no_receipt" };
     if (!FROM[action].includes(r.status)) return { ok: false, reason: "wrong_status", status: r.status };
-    if (action === "verify" && !r.receiptImageKey) return { ok: false, reason: "no_receipt" };
+    const withoutReceipt = action === "verify" && !r.receiptImageKey;
+    if (withoutReceipt && !reason) return { ok: false, reason: "no_receipt" };
 
     const now = new Date();
     const moved = await transitionRedemption(
@@ -48,7 +49,7 @@ export async function reviewRedemption(id: string, action: ReviewAction, staffId
       TO[action],
       {
         reviewedAt: now,
-        reviewNote: action === "verify" ? null : (reason ?? null),
+        reviewNote: action === "verify" && !withoutReceipt ? null : (reason ?? null),
         ...(action === "verify" ? { verifiedById: staffId } : {}),
       },
       { settlementId: null },
@@ -64,7 +65,7 @@ export async function reviewRedemption(id: string, action: ReviewAction, staffId
         action: `redemption.${TO[action].toLowerCase()}`,
         entityType: "Redemption",
         entityId: id,
-        meta: { from: r.status, to: TO[action], reason: reason ?? null },
+        meta: { from: r.status, to: TO[action], reason: reason ?? null, ...(withoutReceipt ? { withoutReceipt: true } : {}) },
       },
       tx,
     );
@@ -97,9 +98,7 @@ export async function listRedemptionQueue(f: QueueFilter, now = new Date()) {
     ...(fromDate || toDate ? { redeemedAt: { ...(fromDate ? { gte: fromDate } : {}), ...(toDate ? { lt: toDate } : {}) } } : {}),
   };
   const flaggedWhere: Prisma.RedemptionWhereInput = { status: "CLAIMED", redeemedAt: { lt: noReceiptCutoff(now) } };
-  const where: Prisma.RedemptionWhereInput = f.flagged
-    ? { AND: [base, flaggedWhere] }
-    : { ...base, ...(f.status ? { status: f.status } : {}) };
+  const where: Prisma.RedemptionWhereInput = f.flagged ? { AND: [base, flaggedWhere] } : { ...base, ...(f.status ? { status: f.status } : {}) };
 
   const [rows, total, counts, flaggedCount] = await Promise.all([
     db.redemption.findMany({

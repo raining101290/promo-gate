@@ -4,10 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch: # "Run workflow" on main = test + redeploy
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main: it may be halfway through a deploy.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ci:
@@ -75,3 +77,61 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  # Deploys main to the cPanel server once every check above passed. Skipped until the repository variable
+  # CPANEL_HOST is set. One-time server setup: docs/DEPLOY-CPANEL.md.
+  deploy:
+    needs: ci
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.CPANEL_HOST != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    env:
+      # Build-time placeholders only (every page renders at request time; real values live in ~/perks/shared/.env).
+      DATABASE_URL: postgresql://build:build@localhost:5432/build
+      SESSION_SECRET: build-only-placeholder-0123456789abcdef
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_OUTPUT: standalone
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build (standalone)
+        run: npm run build
+
+      - name: Package release
+        run: bash deploy/cpanel/package.sh release.tgz
+
+      - name: SSH key
+        env:
+          SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy && chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Upload and activate
+        env:
+          HOST: ${{ vars.CPANEL_HOST }}
+          SSH_USER: ${{ vars.CPANEL_USER }}
+          PORT: ${{ vars.CPANEL_SSH_PORT || '22' }}
+        run: |
+          ID="$(date -u +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          ssh_() { ssh -i ~/.ssh/deploy -p "$PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes -o ServerAliveInterval=20 "$SSH_USER@$HOST" "$@"; }
+          ssh_ "mkdir -p perks/releases/$ID && tar -xzf - -C perks/releases/$ID" < release.tgz
+          ssh_ "bash perks/releases/$ID/deploy/activate.sh"

@@ -19,6 +19,35 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Docker/VPS builds set NEXT_OUTPUT=standalone (self-contained server.js); Vercel ignores it.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
+  // Routes using the dev storage/outbox drivers build file paths at runtime, so the file tracer pulls in the
+  // whole project (tests, docs, dev uploads). Nothing below is read at runtime; keep it out of the standalone bundle.
+  // (Next also copies .env files into standalone itself; deploy/cpanel/package.sh strips them and refuses leaks.)
+  outputFileTracingExcludes: {
+    "/**": [
+      ".env*",
+      ".storage/**",
+      ".outbox*",
+      ".git/**",
+      "*.md",
+      "docs/**",
+      "tests/**",
+      "test-results/**",
+      "playwright-report/**",
+      "scripts/**",
+      "src/**",
+      "prisma/**",
+      "deploy/**",
+      "Dockerfile",
+      "docker-compose.yml",
+      "*.config.{ts,mjs,js}",
+      "prisma7.config.ts",
+      "components.json",
+      "vercel.json",
+      "package-lock.json",
+      "tsconfig*.json",
+      "*.tsbuildinfo",
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

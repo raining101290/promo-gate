@@ -109,7 +109,7 @@ prisma7.config.ts        # Prisma 7 config (schema path, seed cmd, DATABASE_URL)
 ## Commands
 - `db:up`/`db:down` (Postgres 16, host port **5434**), `db:migrate -- --name <n>`, `db:generate`, `db:seed` (prints staff passwords)
 - `dev`, `build`, `typecheck`, `lint`. Seed: staff `admin|support|finance@perks.local`, PIN `1234`, `/r/bean-gulshan`.
-- `test:db:up` (Postgres :5435, `_test`) then `test` / `test:e2e` (both RESET it). CI `.github/workflows/ci.yml`; deploy `docs/DEPLOY.md`.
+- `test:db:up` (Postgres :5435, `_test`) then `test` / `test:e2e` (both RESET it). CI `.github/workflows/ci.yml` (deploys main to cPanel: `deploy/cpanel/`, `docs/DEPLOY-CPANEL.md`).
 
 ## Definition of done
 A task is done only when ALL of these hold:

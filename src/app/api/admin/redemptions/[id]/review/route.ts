@@ -7,7 +7,7 @@ import { badId, readId } from "@/app/api/id-param";
 
 const MESSAGES = {
   not_found: [404, "Redemption not found."],
-  no_receipt: [409, "There's no receipt to verify yet. Dispute or reject it instead, or wait for the customer."],
+  no_receipt: [409, "There's no receipt. To verify without one, write how you confirmed the sale (e.g. the café's POS record)."],
   in_settlement: [409, "This redemption is already in a settlement and can't be changed."],
   wrong_status: [409, "This redemption was already reviewed. Refresh to see its current status."],
 } as const;

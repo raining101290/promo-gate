@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 
 import { getStorage, LocalStorageDriver, verifyLocalToken } from "@/server/providers/storage";
 
-// Dev-only stand-in for S3 presigned URLs. Every request needs a valid, unexpired HMAC token.
+// Stand-in for S3 presigned URLs when STORAGE_DRIVER=local (dev, or production on one server).
+// Every request needs a valid, unexpired HMAC token.
 
 function localDriver(): LocalStorageDriver | null {
   // Check config first: in production getStorage() refuses the local driver (would be a 500, not a 404).
@@ -19,6 +20,8 @@ export async function PUT(req: Request) {
   const t = verifyLocalToken(new URL(req.url).searchParams, "put");
   if (!t) return deny(403, "Invalid or expired upload URL");
   if (req.headers.get("content-type") !== t.ct) return deny(403, "Content-Type does not match the signed upload");
+  // Check the declared size before reading, so an oversized body is never buffered.
+  if (req.headers.get("content-length") !== String(t.len)) return deny(403, "Content-Length does not match the signed upload");
 
   const data = new Uint8Array(await req.arrayBuffer());
   if (data.byteLength !== t.len) return deny(403, "Content-Length does not match the signed upload");

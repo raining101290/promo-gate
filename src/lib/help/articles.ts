@@ -215,7 +215,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
             rows: [
               ["To review", "Receipt uploaded, waiting for a check", "Open the receipt; verify, dispute or reject"],
               ["No receipt yet", 'Redeemed, no photo yet (badge "Receipt needed")', "Usually nothing. The customer has a link to upload."],
-              ["No receipt 24h+", "Still no photo 24 hours after redemption", "Contact the customer (see playbook)"],
+              [
+                "No receipt 24h+",
+                "Still no photo 24 hours after redemption",
+                "Remind the customer; if none comes, confirm with the café and Verify without receipt (see playbook)",
+              ],
               ["Disputed", "Something didn't match; on hold", "Resolve with the customer/café, then verify or reject"],
               ["Verified", "Checked and ready for settlement", "Nothing (Finance picks these up)"],
               ["Rejected", "Will never be paid", "Nothing"],
@@ -286,6 +290,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
             rows: [
               ["Verify", "Everything matches", "Ready to pay in Settlements. Final."],
               [
+                "Verify without receipt",
+                "No photo, but the café confirmed the sale (its POS shows the Hosting.com Voucher payment for this time and amount)",
+                "Same as Verify. Your note is saved and the audit log marks it as verified without receipt.",
+              ],
+              [
                 "Dispute",
                 "Something is off but may be explained (e.g. small amount difference the café must confirm)",
                 "On hold, uploads closed. Write a note. Later verify or reject.",
@@ -296,7 +305,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "note",
             tone: "warn",
-            text: "You can't verify without a receipt photo. A redemption that is already in a settlement can't be changed.",
+            text: "Verifying without a receipt needs a written reason saying how you confirmed the sale. Never verify on the customer's word alone. A redemption that is already in a settlement can't be changed.",
           },
         ],
       },
@@ -891,7 +900,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         blocks: [
           {
             kind: "p",
-            text: "The receipt proves the café actually gave the discount on a real bill. **A redemption can't be verified, and so the café can't be paid, without a photo.** Customers get the upload link by SMS/email right after redeeming, and it's also on their dashboard under the redemption.",
+            text: "The receipt is the quickest proof that the café gave the discount on a real bill. Customers get the upload link by email right after redeeming, and it's also on their dashboard under the redemption. Many customers won't bother once they've paid, but **the café must still be paid**: the cashier's PIN already shows the café accepted the voucher. So when no photo comes, confirm the sale with the café and use **Verify without receipt**.",
           },
         ],
       },
@@ -904,7 +913,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
             items: [
               "Accepted: JPEG, PNG or HEIC photos up to 8 MB. Phones shrink them automatically before upload.",
               "Customers can replace the photo while it is **Receipt needed** or **Receipt sent** (up to 10 uploads per hour). Once it is Disputed, Verified or Rejected, uploads are closed.",
-              '**No receipt after 24 hours** → appears in the "No receipt 24h+" tab. Send the reminder below. If the customer lost it, ask the café for a copy of the POS receipt, using the ref and time.',
+              '**No receipt after 24 hours** → appears in the "No receipt 24h+" tab. Send the reminder below. If nothing comes (or the customer lost it), ask the café to check its POS for a Hosting.com Voucher payment at that time and amount (give them the ref, time, bill and discount). If the payment is there, **Verify without receipt** and note how the café confirmed it. If the café has no record, dispute it.',
               "**Blurry or cut-off** photo → **don't dispute yet**: ask the customer to upload a clearer one (the reply below) and review the new photo. Dispute only if no usable photo comes; disputed redemptions can't receive new uploads.",
             ],
           },
