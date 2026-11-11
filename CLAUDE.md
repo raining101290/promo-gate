@@ -93,7 +93,7 @@ prisma7.config.ts        # Prisma 7 config (schema path, seed cmd, DATABASE_URL)
 - Zod schemas shared by forms and actions live in `src/lib/schemas`.
 
 ## UI conventions
-- Customer pages are **mobile-first** (~360px, big tap targets); staff pages desktop-first shadcn tables.
+- Customer pages **mobile-first** (~360px, big taps); staff pages desktop-first shadcn tables. Staff help `/admin/help` = `src/lib/help/articles.ts`; update with behaviour changes (`tests/unit/help.test.ts`).
 
 ## Security
 - OTPs are short-lived, hashed, attempt-limited and single-use.

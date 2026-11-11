@@ -8,7 +8,6 @@ import { limit } from "@/server/rate-limit";
 import { writeAudit } from "@/server/services/audit";
 import { requestOtp } from "@/server/services/otp";
 
-
 export const DUPLICATE_INVOICE_MESSAGE = "This invoice has already been submitted";
 export const CONTACT_CONFLICT_MESSAGE =
   "This email and phone number belong to two different accounts. Use the email and phone from the same account, or contact support.";
@@ -59,11 +58,11 @@ export async function submitOfferRequest(
   const { customer, offerRequestId } = created;
   if (ctx.currentCustomerId === customer.id) return { ok: true, offerRequestId, otp: null };
 
-  // OTP only to a contact the customer already owns: the submitted phone if it is theirs, else their email.
-  const target: LoginTarget =
-    customer.phone === input.phone
-      ? { channel: "SMS", target: customer.phone }
-      : { channel: "EMAIL", target: customer.email };
+  // OTP only to a contact the customer already owns: the account email, or the submitted phone if it
+  // is the account's phone. Honour the customer's channel choice; SMS falls back to email otherwise.
+  const ownsPhone = customer.phone === input.phone;
+  const wantEmail = input.otpChannel === "EMAIL" || !ownsPhone;
+  const target: LoginTarget = wantEmail ? { channel: "EMAIL", target: customer.email } : { channel: "SMS", target: customer.phone };
   const otp = await requestOtp(target, { ip: ctx.ip });
   return { ok: true, offerRequestId, otp: { ...target, sent: otp.ok } };
 }

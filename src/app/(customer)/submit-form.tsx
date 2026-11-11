@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { ChannelToggle, type OtpChannel } from "@/components/customer/channel-toggle";
 import { OtpCodeForm, postJson } from "@/components/customer/otp-code-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,14 @@ type SubmitResponse = {
 
 type FieldErrors = Partial<Record<OfferRequestField, string>>;
 
-const FIELDS: { name: OfferRequestField; label: string; placeholder: string; type: string; autoComplete: string; inputMode?: "email" | "tel" | "text" }[] = [
+const FIELDS: {
+  name: OfferRequestField;
+  label: string;
+  placeholder: string;
+  type: string;
+  autoComplete: string;
+  inputMode?: "email" | "tel" | "text";
+}[] = [
   { name: "invoiceNumber", label: "Invoice number", placeholder: "e.g. INV-104233", type: "text", autoComplete: "off" },
   { name: "email", label: "Email", placeholder: "you@example.com", type: "email", autoComplete: "email", inputMode: "email" },
   { name: "phone", label: "Mobile number", placeholder: "01XXXXXXXXX", type: "tel", autoComplete: "tel", inputMode: "tel" },
@@ -36,6 +44,7 @@ export function SubmitForm() {
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [otpChannel, setOtpChannel] = useState<OtpChannel>("SMS");
   const [otp, setOtp] = useState<SubmitResponse["otp"]>(null);
 
   async function submit(e: FormEvent) {
@@ -55,7 +64,7 @@ export function SubmitForm() {
 
     setPending(true);
     try {
-      const res = await postJson<SubmitResponse>("/api/offer-requests", values);
+      const res = await postJson<SubmitResponse>("/api/offer-requests", { ...values, otpChannel });
       if (!res.ok) {
         setFieldErrors(res.fieldErrors ?? {});
         setError(res.fieldErrors ? null : (res.error ?? "Something went wrong. Try again."));
@@ -115,6 +124,7 @@ export function SubmitForm() {
           )}
         </div>
       ))}
+      <ChannelToggle value={otpChannel} onChange={setOtpChannel} label="Send my login code by" />
       {error && (
         <p className="text-destructive text-sm" role="alert">
           {error}

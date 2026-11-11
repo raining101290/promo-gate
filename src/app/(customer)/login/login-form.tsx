@@ -2,15 +2,30 @@
 
 import { useState, type FormEvent } from "react";
 
+import { ChannelToggle, type OtpChannel } from "@/components/customer/channel-toggle";
 import { OtpCodeForm, postJson } from "@/components/customer/otp-code-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { parseLoginTarget, TARGET_ERROR } from "@/lib/schemas/auth";
+import { parseLoginTarget } from "@/lib/schemas/auth";
+
+type Channel = OtpChannel;
+
+const CHANNELS: Record<Channel, { label: string; placeholder: string; inputMode: "tel" | "email"; autoComplete: string; error: string }> = {
+  SMS: {
+    label: "Mobile number",
+    placeholder: "01XXXXXXXXX",
+    inputMode: "tel",
+    autoComplete: "tel",
+    error: "Enter a valid BD mobile number (01XXXXXXXXX)",
+  },
+  EMAIL: { label: "Email address", placeholder: "you@example.com", inputMode: "email", autoComplete: "email", error: "Enter a valid email address" },
+};
 
 export function LoginForm({ nextPath }: { nextPath: string }) {
   const [step, setStep] = useState<"target" | "code">("target");
+  const [channel, setChannel] = useState<Channel>("SMS");
   const [target, setTarget] = useState("");
   const [pending, setPending] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -19,7 +34,8 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
   async function requestCode(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!parseLoginTarget(target)) return setError(TARGET_ERROR);
+    // The customer picks how to receive the code; the value must match that choice.
+    if (parseLoginTarget(target)?.channel !== channel) return setError(CHANNELS[channel].error);
 
     setPending(true);
     try {
@@ -39,19 +55,29 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       <CardHeader>
         <CardTitle>{step === "target" ? "Log in" : "Enter your code"}</CardTitle>
         <CardDescription>
-          {step === "target" ? "Use the email or mobile number from your hosting.com order." : info}
+          {step === "target" ? "Get a login code by SMS or email. Use the mobile number or email from your hosting.com order." : info}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {step === "target" ? (
           <form onSubmit={requestCode} className="space-y-4" noValidate>
+            <ChannelToggle
+              value={channel}
+              onChange={(c) => {
+                setChannel(c);
+                setTarget("");
+                setError(null);
+              }}
+            />
             <div className="space-y-2">
-              <Label htmlFor="target">Email or mobile number</Label>
+              <Label htmlFor="target">{CHANNELS[channel].label}</Label>
               <Input
                 id="target"
                 name="target"
-                autoComplete="username"
-                placeholder="you@example.com or 01XXXXXXXXX"
+                type={channel === "EMAIL" ? "email" : "tel"}
+                inputMode={CHANNELS[channel].inputMode}
+                autoComplete={CHANNELS[channel].autoComplete}
+                placeholder={CHANNELS[channel].placeholder}
                 className="h-12 text-base"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
@@ -65,7 +91,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
               </p>
             )}
             <Button type="submit" className="h-12 w-full text-base" disabled={pending}>
-              {pending ? "Sending…" : "Send code"}
+              {pending ? "Sending…" : channel === "SMS" ? "Send code by SMS" : "Send code by email"}
             </Button>
           </form>
         ) : (

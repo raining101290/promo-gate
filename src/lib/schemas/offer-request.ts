@@ -34,7 +34,9 @@ export const offerRequestInputSchema = z.object({
   invoiceNumber: invoiceNumberSchema,
   email: customerEmailSchema,
   phone: bdPhoneSchema,
+  /** How the customer wants their login code (only honoured for a contact they already own). */
+  otpChannel: z.enum(["SMS", "EMAIL"]).optional(),
 });
 
 export type OfferRequestInput = z.output<typeof offerRequestInputSchema>;
-export type OfferRequestField = keyof OfferRequestInput;
+export type OfferRequestField = Exclude<keyof OfferRequestInput, "otpChannel">;

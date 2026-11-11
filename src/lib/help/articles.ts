@@ -56,11 +56,11 @@ export const HELP_ARTICLES: HelpArticle[] = [
             kind: "table",
             head: ["Role", "Main job", "Screens"],
             rows: [
-              ["Support", "Approve invoices; check receipts; answer customers", "Requests, Redemptions, Help"],
+              ["Support", "Approve invoices; check receipts; answer customers", "Requests, Redemptions, SMS, Help"],
               [
                 "Finance",
                 "Pay cafés: draft, approve (four-eyes) and mark settlements paid",
-                "Redemptions (view), Partners (view), Settlements, Help",
+                "Redemptions (view), Partners (view), Settlements, SMS, Help",
               ],
               ["Admin", "Set up campaigns, cafés, branches, PINs and staff; everything else too", "All screens, including Staff and Audit log"],
             ],
@@ -306,16 +306,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
         blocks: [
           {
             kind: "table",
-            head: ["Badge", "Rule", "Why it matters"],
+            head: ["Badge (example)", "Rule", "Why it matters"],
             rows: [
-              ["Repeat", "Same customer redeemed again within 1 hour", "Several vouchers for one table/order"],
+              ["⚠ Repeat customer", "Same customer redeemed again within 1 hour", "Several vouchers for one table/order"],
               [
-                "High bill",
+                "⚠ Bill 3.4× avg",
                 "Bill is 3× or more the branch's average (after 5+ redemptions there, last 90 days)",
                 "Inflated bill to max out a percent discount",
               ],
-              ["Off-hours", "Redeemed between 23:00 and 07:00 Dhaka time", "Café likely closed"],
-              ["PIN guessing", "5+ wrong PINs at this branch in the 24 hours before", "Someone may have guessed the PIN; consider resetting it"],
+              ["⚠ Off-hours 23:40", "Redeemed between 23:00 and 07:00 Dhaka time", "Café likely closed"],
+              ["⚠ 6 PIN failures", "5+ wrong PINs at this branch in the 24 hours before", "Someone may have guessed the PIN; consider resetting it"],
             ],
           },
         ],
@@ -570,6 +570,88 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "sms",
+    title: "SMS: credit & delivery log",
+    summary: "Check gateway credit, find out whether a customer's code was sent, and what each gateway error means.",
+    category: "Screens",
+    roles: ["SUPPORT", "FINANCE", "ADMIN"],
+    screen: "/admin/sms",
+    sections: [
+      {
+        id: "purpose",
+        heading: "What this screen is for",
+        blocks: [
+          {
+            kind: "p",
+            text: "Every SMS the app sends (login codes, branch alerts, receipt links, expiry reminders) is recorded here, **one row per attempt**. When a customer says \"the code never arrived\", search their number: you'll see whether we sent it and, if not, the gateway's exact reason.",
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: "Message text is never shown here: login codes are never stored at all, and other messages can contain amounts or private upload links. Phone numbers are partly hidden.",
+          },
+        ],
+      },
+      {
+        id: "fields",
+        heading: "Fields",
+        blocks: [
+          {
+            kind: "fields",
+            items: [
+              {
+                name: "Gateway credit",
+                why: "Prepaid balance at BulkSMSBD, in taka. It turns amber when it is low. At zero, **no login codes or branch alerts go out**, so top up before that.",
+                tip: "The figure is refreshed at most once a minute.",
+              },
+              {
+                name: "Sent / Failed, last 24h",
+                why: "Quick health check. A sudden jump in failures usually means credit, sender ID or IP-whitelist trouble (see codes below).",
+              },
+              { name: "To", why: "The number the SMS went to, partly hidden. Search with the full number to filter." },
+              {
+                name: "Type",
+                why: "Login code, Branch alert (to the café, with the ref), Receipt link (to the customer after redeeming), Expiry reminder.",
+              },
+              {
+                name: "Try",
+                why: "Temporary errors are retried up to 3 times; each try is its own row. Permanent errors (bad number, no credit) stop after the first try.",
+              },
+              {
+                name: "Gateway reply",
+                why: "For failures, the gateway code and reason. For successes, the provider name and its message reference.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "codes",
+        heading: "Gateway error codes",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Code", "Meaning", "What to do"],
+            rows: [
+              ["1001", "Invalid number", "Customer/branch number is wrong. Check it; customers can log in by email instead."],
+              ["1002, 1013–1017", "Sender ID wrong, disabled or not priced", "Admin: check the sender ID with BulkSMSBD."],
+              ["1007, 1006", "Balance insufficient / expired", "Admin/finance: top up the BulkSMSBD account."],
+              [
+                "1012",
+                "Masking SMS must be in Bengali",
+                "Admin: the sender ID is a masking ID with a Bengali-only rule; ask BulkSMSBD to allow English.",
+              ],
+              ["1018–1021, 1011, 1031", "Gateway account problem", "Admin: contact BulkSMSBD."],
+              ["1032", "Server IP not whitelisted", "Admin: whitelist the server's IP address in the BulkSMSBD panel (the error names the IP)."],
+              ["1003", "Required field missing", "Configuration problem (API key or sender ID empty). Admin: check the SMS settings."],
+              ["1005, network", "Temporary gateway/network problem", "Retried automatically. If it persists, contact BulkSMSBD."],
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "staff",
     title: "Staff accounts & roles",
     summary: "Adding colleagues, roles and permissions, temporary passwords, deactivating.",
@@ -593,6 +675,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
               ["Campaigns", "", "", "✓"],
               ["View settlements", "", "✓", "✓"],
               ["Create, approve, pay settlements", "", "✓", "✓"],
+              ["SMS credit & delivery log", "✓", "✓", "✓"],
               ["Audit log", "", "", "✓"],
               ["Manage staff", "", "", "✓"],
             ],
@@ -700,7 +783,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "list",
             items: [
-              "Customers don't have passwords. They type their email **or** phone and get a **6-digit code**, valid for **5 minutes**.",
+              "Customers don't have passwords. They choose **Mobile (SMS)** or **Email**, type that contact, and get a **6-digit code**, valid for **5 minutes**.",
               "They do **not** need the invoice number to log in. The invoice is only for claiming a new voucher.",
               "A code goes only to a contact already on the account. Typing a new email/phone never changes the account (this stops account takeover).",
               "Once logged in, a customer stays signed in on that phone for 30 days.",
@@ -723,8 +806,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
               ],
               [
                 '"The code never arrived"',
-                "Spam folder, typo in contact, SMS delay",
-                "Check spam; try the other channel (email ↔ SMS); wait a minute before resending.",
+                "Spam folder, typo in contact, SMS delay or gateway error",
+                "For SMS: search their number on the **SMS** screen; a failure shows the reason. Otherwise check spam, or pick the other option (Mobile/SMS or Email) on the login screen.",
               ],
               [
                 '"Too many attempts"',
@@ -737,7 +820,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "reply",
             label: "Reply: code not arriving",
-            text: "Hi! Login codes are sent to the email or phone you used when you submitted your invoice. Please check your spam/promotions folder, or try logging in with your phone number instead. Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
+            text: "Hi! Login codes are sent to the email or phone you used when you submitted your invoice. Please check your spam/promotions folder, or choose the other option (Mobile/SMS or Email) on the login screen. Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
           },
         ],
       },

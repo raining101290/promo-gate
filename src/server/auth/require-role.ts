@@ -91,5 +91,7 @@ export const PERMISSIONS = {
   viewSettlements: ["FINANCE", "ADMIN"],
   manageSettlements: ["FINANCE", "ADMIN"],
   viewAudit: ["ADMIN"],
+  /** SMS credit + delivery log (phones masked; no message bodies). */
+  viewSms: ["SUPPORT", "FINANCE", "ADMIN"],
   manageStaff: ["ADMIN"],
 } as const satisfies Record<string, readonly StaffRole[]>;

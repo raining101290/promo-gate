@@ -22,8 +22,10 @@ separate values). Never reuse dev secrets.
 | `DIRECT_DATABASE_URL` | yes | **Direct** URL (Neon non-pooler host / Supabase port 5432). Only migrations and admin scripts use it. |
 | `DB_POOL_MAX` | no | Connections per serverless instance. Default `5`. |
 | `CRON_SECRET` | yes | `openssl rand -hex 24`. Vercel Cron sends it automatically. |
-| `SMS_DRIVER` | yes | `http` |
-| `SMS_API_URL`, `SMS_API_KEY`, `SMS_SENDER_ID` | yes | From your gateway. See §6 about the sender ID. |
+| `SMS_DRIVER` | yes | `bulksmsbd` |
+| `SMS_API_KEY`, `SMS_SENDER_ID` | yes | From the BulkSMSBD panel (sender ID e.g. `Hosting.com`). See §6. |
+| `SMS_API_URL` | no | Default `https://bulksmsbd.net/api/smsapi` (always HTTPS: the key is in the request). |
+| `SMS_LOW_BALANCE` | no | Credit (taka) below which Admin → SMS shows a warning. Default `200`. |
 | `EMAIL_DRIVER` | yes | ⚠ Only `console`/`file` exist today and both refuse to run in production. An SMTP/API email driver must be added before launch, or customers can only log in by SMS. |
 | `STORAGE_DRIVER` | yes | `s3` |
 | `STORAGE_BUCKET` | yes | e.g. `perks-receipts` |
@@ -138,9 +140,15 @@ Details and a system-cron line: `docs/OPERATIONS.md`.
   receipt reminder, expiry reminder (texts in `src/lib/sms-text.ts`, all ASCII ≤160 chars = 1 segment).
 - Ask for the **transactional/OTP route**, not promotional: promotional routes can be blocked by
   DND/quiet-hour rules, and OTPs must arrive at the café counter any time.
-- Confirm the API field names match `HttpSmsDriver` (`api_key`, `senderid`, `number` as `8801…`,
-  `message`); adjust `formFor()` in `src/server/providers/sms.ts` if not. Test with one real phone
-  before launch and watch `SmsLog` for FAILED rows.
+- Gateway: **BulkSMSBD** (`BulkSmsBdDriver` in `src/server/providers/sms.ts`). Fields `api_key`, `type=text`,
+  `number` as `8801…`, `senderid`, `message`; success is `response_code` 202, every other code is mapped to a
+  readable error (permanent errors such as 1001/1007/1032 are not retried). Credit is shown on **Admin → SMS**.
+- ⚠ **IP whitelist.** BulkSMSBD only accepts sends from whitelisted server IPs (code `1032` otherwise). Whitelist
+  the production server's **public outbound IP** in the BulkSMSBD panel. Vercel functions have no fixed outbound IP
+  unless your plan includes Vercel **Static IPs**; otherwise send from the Docker/VPS deployment (fixed IP), or ask
+  BulkSMSBD to lift the IP restriction for this API key. Login by SMS does not work until this is done.
+- Verify from the server itself: `npm run sms:test` (credit) then `npm run sms:test -- 01XXXXXXXXX` (one real SMS).
+  Watch Admin → SMS for FAILED rows after launch.
 - Budget alert: set a low-balance alert at the gateway; failed sends are retried twice, then logged.
 
 ## 7. Backups

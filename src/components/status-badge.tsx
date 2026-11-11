@@ -27,6 +27,9 @@ const LABELS: Record<string, { label: string; tone: keyof typeof STYLES }> = {
   // Settlement (APPROVED shared above)
   DRAFT: { label: "Draft", tone: "gray" },
   PAID: { label: "Paid", tone: "green" },
+  SENT: { label: "Sent", tone: "green" },
+  FAILED: { label: "Failed", tone: "red" },
+  QUEUED: { label: "Queued", tone: "gray" },
   // Partner contract
   PAUSED: { label: "Paused", tone: "amber" },
   ENDED: { label: "Ended", tone: "gray" },

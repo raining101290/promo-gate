@@ -3,7 +3,7 @@ import "server-only";
 import { maskEmail, maskPhone } from "@/lib/phone";
 import { db } from "@/server/db";
 import { getEmailProvider } from "@/server/providers/email";
-import { getSmsProvider } from "@/server/providers/sms";
+import { getSmsProvider, SmsGatewayError } from "@/server/providers/sms";
 
 export type SmsPurpose = "otp" | "branch_redemption" | "customer_receipt" | "review" | "expiry_reminder";
 
@@ -37,6 +37,8 @@ export async function sendSms(
       const message = err instanceof Error ? err.message : String(err);
       console.error(`[sms] ${opts.purpose} attempt ${attempt}/${attempts} to=${maskPhone(to)} failed: ${message}`);
       await log({ to, opts, body, provider, status: "FAILED", attempt, error: message.slice(0, 300) });
+      // Bad number, no balance, IP not whitelisted...: the same request will fail again.
+      if (err instanceof SmsGatewayError && !err.retryable) return false;
       if (attempt < attempts) await sleep(SMS_RETRY_DELAYS_MS[attempt - 1]);
     }
   }

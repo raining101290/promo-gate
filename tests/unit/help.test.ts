@@ -12,6 +12,7 @@ import { RECEIPT_MAX_BYTES, RECEIPT_TYPES } from "@/lib/schemas/receipt";
 import { PASSWORD_MIN, REJECT_REASONS } from "@/lib/schemas/staff";
 import { PERMISSIONS } from "@/server/auth/require-role";
 import { SESSION_MAX_AGE_SECONDS, STAFF_SESSION_MAX_AGE_SECONDS } from "@/server/auth/token";
+import { BULKSMSBD_CODES } from "@/server/providers/sms";
 import { RATE_LIMITS } from "@/server/rate-limit";
 import { FRAUD_RULES } from "@/server/services/fraud-signals";
 import { OTP_MAX_ATTEMPTS, OTP_TTL_MS } from "@/server/services/otp";
@@ -43,7 +44,7 @@ describe("knowledge base structure", () => {
     const slugs = new Set(HELP_ARTICLES.map((a) => a.slug));
     const pages = readdirSync(root, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".tsx"));
     const used = pages.flatMap((f) => [...readFileSync(path.join(root, f), "utf8").matchAll(/<HelpLink slug="([^"]+)"/g)].map((m) => m[1]));
-    expect(used.length).toBeGreaterThanOrEqual(7);
+    expect(used.length).toBeGreaterThanOrEqual(8);
     for (const s of used) expect(slugs.has(s), s).toBe(true);
   });
 });
@@ -78,9 +79,25 @@ describe("knowledge base matches the code", () => {
   });
 
   it("fraud badge rules", () => {
-    expect(FRAUD_RULES).toMatchObject({ repeatWindowMs: HOUR, billMultiple: 3, billMinSamples: 5, offHoursStart: 23, offHoursEnd: 7, pinFailureThreshold: 5 });
+    expect(FRAUD_RULES).toMatchObject({
+      repeatWindowMs: HOUR,
+      billMultiple: 3,
+      billMinSamples: 5,
+      offHoursStart: 23,
+      offHoursEnd: 7,
+      pinFailureThreshold: 5,
+    });
     expect(FRAUD_RULES.billLookbackMs).toBe(90 * 24 * HOUR);
     has("between 23:00 and 07:00");
+  });
+
+  it("every BulkSMSBD error code is explained in the SMS article", () => {
+    const sms = helpSearchText(HELP_ARTICLES.find((a) => a.slug === "sms")!);
+    const ranges = [...sms.matchAll(/(\d{4})–(\d{4})/g)].map((m) => [Number(m[1]), Number(m[2])]);
+    for (const code of Object.keys(BULKSMSBD_CODES)) {
+      const n = Number(code);
+      expect(sms.includes(code) || ranges.some(([a, b]) => n >= a && n <= b), code).toBe(true);
+    }
   });
 
   it("reject reasons are quoted exactly", () => {
@@ -107,6 +124,7 @@ describe("knowledge base matches the code", () => {
     expect(row("Campaigns")).toEqual(tick(PERMISSIONS.manageCampaigns));
     expect(row("View settlements")).toEqual(tick(PERMISSIONS.viewSettlements));
     expect(row("Create, approve, pay settlements")).toEqual(tick(PERMISSIONS.manageSettlements));
+    expect(row("SMS credit & delivery log")).toEqual(tick(PERMISSIONS.viewSms));
     expect(row("Audit log")).toEqual(tick(PERMISSIONS.viewAudit));
     expect(row("Manage staff")).toEqual(tick(PERMISSIONS.manageStaff));
   });
