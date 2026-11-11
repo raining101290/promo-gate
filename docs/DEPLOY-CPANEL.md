@@ -178,9 +178,9 @@ then, Resend only delivers to your own Resend login address.
   first, remove them in a later release.
 - **Logs:** Setup Node.js App shows the app; errors go to `~/perks/app/stderr.log` (if your host enables it) or
   cPanel → **Errors**. Restart: Setup Node.js App → Restart, or `touch ~/perks/app/tmp/restart.txt`.
-- **Visitor IPs:** `app.cjs` replaces `X-Forwarded-For` with the real connection address, so visitors can't fake
-  the IP that rate limits use. Leave `CLIENT_IP_HEADER` unset. If you ever put Cloudflare or another proxy in
-  front, change this first: the connection address would then be the proxy's.
+- **Visitor IPs:** Passenger appends the visitor's address to `X-Forwarded-For`; `app.cjs` keeps only that last
+  entry, so visitors can't fake the IP that rate limits use. Leave `CLIENT_IP_HEADER` unset. If you ever put
+  Cloudflare or another proxy in front, change this first: the last entry would then be the proxy's.
 - **Health:** `https://perks.cloudhosti.com/api/health` → `{"ok":true,"db":"ok","release":"…"}`. Point an
   uptime monitor at it.
 - **Restore a backup:** `pg_restore --clean --if-exists --no-owner -d "postgresql://…" ~/perks/backups/<file>.dump`

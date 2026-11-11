@@ -24,15 +24,20 @@ process.env.NODE_ENV = "production";
 process.env.PERKS_RELEASE = path.basename(release); // shown by /api/health so a deploy can confirm the switch
 process.env.NEXT_TELEMETRY_DISABLED = "1";
 
-// Client IP. Apache/Passenger pass a client-sent X-Forwarded-For through untouched, and Next.js only fills it
-// from the socket when it is missing, so anyone could pick the IP our rate limits see. Nothing sits in front of
-// Passenger here, so the socket address IS the visitor: overwrite the headers before Next.js reads them.
-// (If a CDN/proxy such as Cloudflare is ever put in front, revisit this: the socket would be the proxy.)
+// Client IP. Passenger reaches this process over a local socket (remoteAddress is 127.0.0.1) and APPENDS the
+// visitor's address to X-Forwarded-For, after anything the client sent itself. The app's rate limits read the
+// FIRST entry, which a client can forge, so keep only the LAST one (the hop Passenger added) before Next.js
+// reads the headers. (If a CDN/proxy such as Cloudflare is ever put in front, revisit: the last hop is the proxy.)
 const http = require("node:http");
 const emit = http.Server.prototype.emit;
 http.Server.prototype.emit = function (event, req, ...rest) {
   if (event === "request" && req && req.headers) {
-    const ip = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : "";
+    const hops = String(req.headers["x-forwarded-for"] || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const socketIp = req.socket && req.socket.remoteAddress ? req.socket.remoteAddress.replace(/^::ffff:/, "") : "";
+    const ip = hops.length ? hops[hops.length - 1] : socketIp;
     delete req.headers["x-real-ip"];
     if (ip) req.headers["x-forwarded-for"] = ip;
     else delete req.headers["x-forwarded-for"];
