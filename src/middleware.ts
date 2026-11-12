@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { SESSION_COOKIE, STAFF_SESSION_COOKIE, verifySessionToken } from "@/server/auth/token";
 import { buildCsp } from "@/server/csp";
+import { publicUrl } from "@/lib/public-url";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 const isDev = process.env.NODE_ENV !== "production";
@@ -52,7 +53,7 @@ function allowedOrigins(req: NextRequest) {
 }
 
 function redirectToLogin(req: NextRequest, loginPath: string, next: string) {
-  const url = new URL(loginPath, req.url);
+  const url = publicUrl(loginPath, req.url);
   url.searchParams.set("next", next);
   return NextResponse.redirect(url);
 }
