@@ -79,7 +79,7 @@ CRON_SECRET=paste-the-hex-value
 OTP_CHANNELS=EMAIL
 EMAIL_DRIVER=resend
 RESEND_API_KEY=re_...
-EMAIL_FROM="Hosting.com Perks <perks@cloudhosti.com>"
+EMAIL_FROM="Hosting.com Coffee Campaign <perks@cloudhosti.com>"
 EMAIL_REPLY_TO=support@cloudhosti.com
 
 SMS_DRIVER=off

@@ -1,12 +1,12 @@
 import Link from "next/link";
 
 /** Customer-facing top bar. Logout is a plain POST form so it works without client JS. */
-export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
+export function SiteHeader({ loggedIn, wide = false }: { loggedIn: boolean; wide?: boolean }) {
   return (
     <header className="border-b">
-      <div className="mx-auto flex h-14 w-full max-w-md items-center justify-between gap-2 px-4">
+      <div className={`mx-auto flex h-14 w-full items-center justify-between gap-2 px-4 ${wide ? "max-w-3xl" : "max-w-md"}`}>
         <Link href="/" className="truncate font-semibold tracking-tight">
-          Hosting.com <span className="text-muted-foreground font-normal">Perks</span>
+          Hosting.com <span className="text-muted-foreground font-normal">Coffee Campaign</span>
         </Link>
         {loggedIn ? (
           <nav className="flex shrink-0 items-center gap-1 text-sm">
@@ -20,9 +20,14 @@ export function SiteHeader({ loggedIn }: { loggedIn: boolean }) {
             </form>
           </nav>
         ) : (
-          <Link href="/login" className="hover:bg-accent shrink-0 rounded-md px-3 py-2 text-sm font-medium">
-            Log in
-          </Link>
+          <nav className="flex shrink-0 items-center gap-1 text-sm">
+            <Link href="/guide" className="text-muted-foreground hover:bg-accent rounded-md px-3 py-2">
+              How it works
+            </Link>
+            <Link href="/login" className="hover:bg-accent rounded-md px-3 py-2 font-medium">
+              Log in
+            </Link>
+          </nav>
         )}
       </div>
     </header>

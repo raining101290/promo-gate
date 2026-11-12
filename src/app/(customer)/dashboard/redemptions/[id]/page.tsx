@@ -13,7 +13,7 @@ import { getCustomerRedemptionDetail } from "@/server/services/customer-portal";
 
 import { ReceiptUploader } from "./receipt-uploader";
 
-export const metadata: Metadata = { title: "Receipt · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Receipt · Hosting.com Coffee Campaign" };
 
 export default async function RedemptionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

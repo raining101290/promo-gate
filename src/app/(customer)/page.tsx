@@ -44,6 +44,11 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
             </li>
           ))}
         </ol>
+        <p className="mt-4 text-sm">
+          <Link href="/guide" className="font-medium underline underline-offset-4">
+            See every step with screenshots
+          </Link>
+        </p>
 
         <Card className="mt-8" id="submit">
           <CardHeader>

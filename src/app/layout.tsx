@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hosting.com Perks",
+  title: "Hosting.com Coffee Campaign",
   description: "Coffee perks for Hosting.com customers",
 };
 

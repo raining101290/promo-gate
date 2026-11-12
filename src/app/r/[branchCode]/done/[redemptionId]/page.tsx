@@ -9,7 +9,7 @@ import { getCustomerRedemption } from "@/server/services/redemptions";
 
 import { SuccessScreen } from "./success-screen";
 
-export const metadata: Metadata = { title: "Voucher accepted · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Voucher accepted · Hosting.com Coffee Campaign" };
 
 /**
  * Read-only view of a redemption that already happened. Reloading never redeems again (the voucher is

@@ -39,7 +39,7 @@ export function BranchQrScanner({ voucherId }: { voucherId: string }) {
         return;
       }
     }
-    setMessage("That isn't a Hosting.com Perks counter QR. Look for the standee at the till.");
+    setMessage("That isn't a Hosting.com Coffee Campaign counter QR. Look for the standee at the till.");
   }
 
   function onError(err: IScannerError) {

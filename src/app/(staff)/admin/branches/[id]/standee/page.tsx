@@ -51,7 +51,7 @@ export default async function StandeePage({ params }: { params: Promise<{ id: st
         data-testid="standee"
         className="mx-auto flex h-[148mm] w-[105mm] flex-col items-center overflow-hidden bg-white px-[8mm] pt-[6mm] pb-[5mm] text-center text-neutral-900 shadow-lg ring-1 ring-neutral-200 print:shadow-none print:ring-0"
       >
-        <p className="text-[9pt] font-semibold tracking-[0.2em] text-neutral-500 uppercase">Hosting.com Perks</p>
+        <p className="text-[9pt] font-semibold tracking-[0.2em] text-neutral-500 uppercase">Hosting.com Coffee Campaign</p>
 
         <h1 className="mt-[2.5mm] text-[13.5pt] leading-tight font-semibold">Scan to use your Hosting.com voucher</h1>
         <p className={`${bangla.className} mt-[1mm] text-[10.5pt] leading-snug`}>আপনার Hosting.com ভাউচার ব্যবহার করতে স্ক্যান করুন</p>

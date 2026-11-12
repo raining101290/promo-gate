@@ -30,8 +30,8 @@ const hint = (err: EmailSendError) => {
 
 try {
   const driver = new ResendEmailDriver({ apiKey, from, replyTo: process.env.EMAIL_REPLY_TO || undefined });
-  const { providerRef } = await driver.send(to, "This is a test from Hosting.com Perks. If you received it, email delivery works.", {
-    subject: "Hosting.com Perks: test email",
+  const { providerRef } = await driver.send(to, "This is a test from Hosting.com Coffee Campaign. If you received it, email delivery works.", {
+    subject: "Hosting.com Coffee Campaign: test email",
   });
   console.log(`Sent from ${from} to ${to}. Resend id: ${providerRef ?? "?"}. Check the inbox (and spam).`);
 } catch (err) {

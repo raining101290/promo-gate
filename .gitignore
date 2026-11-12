@@ -57,5 +57,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /.next-e2e/
+/.next-guide/
 /.next-check/
 /.next-standalone/

@@ -10,7 +10,7 @@ import { getAccountSummary } from "@/server/services/customer-data";
 
 import { DeleteAccount } from "./delete-account";
 
-export const metadata: Metadata = { title: "Your data · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Your data · Hosting.com Coffee Campaign" };
 
 export default async function AccountPage() {
   const session = await getCustomerSession();

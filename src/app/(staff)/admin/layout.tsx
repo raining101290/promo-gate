@@ -5,7 +5,7 @@ import { getStaff } from "@/server/auth/require-role";
 import { navFor } from "./nav";
 import { SidebarNav } from "./sidebar-nav";
 
-export const metadata: Metadata = { title: { default: "Admin · Hosting.com Perks", template: "%s · Admin · Perks" } };
+export const metadata: Metadata = { title: { default: "Admin · Hosting.com Coffee Campaign", template: "%s · Admin · Coffee Campaign" } };
 
 const ROLE_LABEL = { SUPPORT: "Support", FINANCE: "Finance", ADMIN: "Admin" } as const;
 
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <aside className="bg-muted/30 flex print:hidden shrink-0 flex-col gap-4 border-b p-4 md:w-56 md:border-r md:border-b-0">
         <div className="px-3">
           <p className="font-semibold tracking-tight">
-            Perks <span className="text-muted-foreground font-normal">Admin</span>
+            Coffee Campaign <span className="text-muted-foreground font-normal">Admin</span>
           </p>
         </div>
         {/* While a temporary password must be replaced, every other page redirects anyway: hide the nav. */}

@@ -7,7 +7,7 @@ import { expiresInLabel } from "@/lib/time";
 import { getCustomerSession } from "@/server/auth/customer";
 import { branchAcceptsVouchers, getBranchByCode, listRedeemableVouchers } from "@/server/services/redemptions";
 
-export const metadata: Metadata = { title: "Use your voucher · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Use your voucher · Hosting.com Coffee Campaign" };
 
 /** Entry from the counter standee QR: /r/<branchCode>[?v=<voucherId> from the in-app scanner]. */
 export default async function BranchEntryPage({
@@ -37,7 +37,7 @@ export default async function BranchEntryPage({
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-md px-4 pt-6 pb-12">
-      <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">Hosting.com Perks</p>
+      <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">Hosting.com Coffee Campaign</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight" data-testid="branch-name">
         {branch.partner.name}
       </h1>

@@ -39,7 +39,7 @@ if (raw) {
     process.exit(1);
   }
   try {
-    const { providerRef } = await driver.send(to, "Hosting.com Perks: test message. If you received this, SMS delivery works.");
+    const { providerRef } = await driver.send(to, "Hosting.com Coffee Campaign: test message. If you received this, SMS delivery works.");
     console.log(`Sent to ${maskPhone(to)}${providerRef ? ` (ref ${providerRef})` : ""}. Check the phone.`);
   } catch (err) {
     console.error(`Send failed: ${explain(err)}`);

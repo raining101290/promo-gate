@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { EmailSendError, ResendEmailDriver } from "@/server/providers/email";
 
 const driver = () =>
-  new ResendEmailDriver({ apiKey: "re_test", from: "Hosting.com Perks <perks@perks.example>", replyTo: "support@example.com", retryDelayMs: 1 });
+  new ResendEmailDriver({ apiKey: "re_test", from: "Hosting.com Coffee Campaign <perks@perks.example>", replyTo: "support@example.com", retryDelayMs: 1 });
 
 /** Fake Resend API: answers each call with the next [status, body] and records the request. */
 function fakeResend(...answers: [number, object][]) {
@@ -31,7 +31,7 @@ describe("ResendEmailDriver", () => {
     expect(calls[0].headers.Authorization).toBe("Bearer re_test");
     expect(calls[0].headers["Idempotency-Key"]).toMatch(/^[0-9a-f-]{36}$/);
     expect(calls[0].body).toEqual({
-      from: "Hosting.com Perks <perks@perks.example>",
+      from: "Hosting.com Coffee Campaign <perks@perks.example>",
       to: ["a@b.co"],
       subject: "Login code",
       text: "Your code is 123456",

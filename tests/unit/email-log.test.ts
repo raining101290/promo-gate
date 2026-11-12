@@ -23,7 +23,7 @@ function fakeResend(...answers: [number, object][]) {
 beforeAll(() => {
   process.env.EMAIL_DRIVER = "resend";
   process.env.RESEND_API_KEY = "re_test";
-  process.env.EMAIL_FROM = "Hosting.com Perks <perks@perks.example>";
+  process.env.EMAIL_FROM = "Hosting.com Coffee Campaign <perks@perks.example>";
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -60,7 +60,7 @@ describe("sendEmail writes the email log", () => {
     const c = await customer();
     expect(await requestOtp({ channel: "EMAIL", target: c.email }, { ip: "203.0.113.77" })).toMatchObject({ ok: true });
     const [row] = await rows(c.email);
-    expect(row).toMatchObject({ status: "SENT", purpose: "otp", subject: "Your Hosting.com Perks login code" });
+    expect(row).toMatchObject({ status: "SENT", purpose: "otp", subject: "Your Hosting.com Coffee Campaign login code" });
     expect(JSON.stringify(row)).not.toMatch(/\b\d{6}\b/);
   });
 

@@ -1,4 +1,15 @@
 import type { HelpArticle } from "./types";
+import {
+  AUDIT_STEPS,
+  CAMPAIGNS_STEPS,
+  EMAIL_STEPS,
+  JOURNEY,
+  PARTNERS_STEPS,
+  REDEMPTIONS_STEPS,
+  REQUESTS_STEPS,
+  SETTLEMENTS_STEPS,
+  STAFF_STEPS,
+} from "./walkthroughs";
 
 /**
  * Staff knowledge base. Numbers here mirror the code (rate-limit.ts, otp.ts, fraud-signals.ts,
@@ -9,7 +20,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   // ---------------------------------------------------------------- Start here
   {
     slug: "how-it-works",
-    title: "How Hosting.com Perks works",
+    title: "How the Coffee Campaign works",
     summary: "The whole programme in five minutes: who does what, from invoice to café payout.",
     category: "Start here",
     roles: ["SUPPORT", "FINANCE", "ADMIN"],
@@ -31,22 +42,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       {
         id: "journey",
         heading: "The journey, step by step",
-        blocks: [
-          {
-            kind: "steps",
-            items: [
-              "**Customer submits** their invoice number, email and phone on the home page. This creates a Request with status **Pending**.",
-              "**Support reviews** the request in **Requests** against the billing system, then approves or rejects it. Approving issues a **Voucher** from the chosen Campaign.",
-              "**Customer logs in** with a one-time code (OTP) sent by **email**, and sees the active voucher.",
-              "**At the café**, the customer scans the QR on the counter **standee**, which opens `/r/<branch code>`. They type the bill amount, and the screen shows the discount.",
-              "**The cashier types the branch PIN** on the customer's phone. The voucher becomes **Redeemed** and the phone shows a green success screen. The branch also gets an SMS with the amounts and a reference like `R-7K2M9Q`.",
-              'The café rings up the discount in its POS as payment type **"Hosting.com Voucher"**.',
-              "**Customer uploads** a photo of the POS receipt, from the link in their SMS/email or from their dashboard.",
-              "**Support verifies** the receipt in **Redemptions**. Only Verified redemptions are paid.",
-              "**Finance settles**: they create a draft per partner, a second person approves it, the café is paid, and the settlement is marked **Paid** with the bank/bKash reference.",
-            ],
-          },
-        ],
+        blocks: [{ kind: "walkthrough", steps: JOURNEY }],
       },
       {
         id: "roles",
@@ -84,16 +80,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     ],
   },
-
-  // ---------------------------------------------------------------- Screens
+  // ---------------------------------------------------------------- Workflows
   {
     slug: "requests",
-    title: "Requests: approving invoices",
-    summary: "What each field on a request means, how to decide, and what each reject reason tells the customer.",
-    category: "Screens",
+    title: "Approve a voucher request",
+    summary: "Check an invoice in billing, then approve it to issue a voucher or reject it with a reason.",
+    category: "Workflows",
     roles: ["SUPPORT", "ADMIN"],
     screen: "/admin/requests",
     sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: REQUESTS_STEPS }] },
       {
         id: "purpose",
         heading: "What this screen is for",
@@ -189,12 +185,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     slug: "redemptions",
-    title: "Redemptions: checking receipts",
-    summary: "The review queue, every tab and column, fraud badges, and when to verify, dispute or reject.",
-    category: "Screens",
+    title: "Check a redemption receipt",
+    summary: "Compare the receipt photo with the amounts, then verify, dispute or reject. Includes tabs, columns and fraud badges.",
+    category: "Workflows",
     roles: ["SUPPORT", "FINANCE", "ADMIN"],
     screen: "/admin/redemptions",
     sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: REDEMPTIONS_STEPS }] },
       {
         id: "purpose",
         heading: "What this screen is for",
@@ -332,13 +329,65 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "settlements",
+    title: "Pay a café",
+    summary: "Draft, approve (four-eyes) and mark paid: how verified redemptions become a payout.",
+    category: "Workflows",
+    roles: ["FINANCE", "ADMIN"],
+    screen: "/admin/settlements",
+    sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: SETTLEMENTS_STEPS }] },
+      {
+        id: "fields",
+        heading: "Fields",
+        blocks: [
+          {
+            kind: "fields",
+            items: [
+              {
+                name: "Ready to pay (overview)",
+                why: "Per partner: verified, unsettled discounts waiting for a draft.",
+              },
+              {
+                name: "Period start / end",
+                why: "Which redemptions to include, by redemption date (Dhaka). Usually a calendar month or fortnight, as agreed in the contract.",
+              },
+              {
+                name: "Total",
+                why: "Sum of included discounts. This is the amount to transfer.",
+              },
+              {
+                name: "Created / Approved / Paid by",
+                why: "Who did each step and when. Together with the audit log, this is the paper trail for accounting.",
+              },
+              {
+                name: "Payment reference",
+                why: "Bank transaction ref or bKash TrxID. Lets anyone trace the transfer later.",
+              },
+              {
+                name: "Download CSV statement",
+                why: "Line-by-line list (ref, branch, date, bill, discount) to send to the café with the payment.",
+              },
+            ],
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: "Redemptions that are still Receipt needed, To review or Disputed are not included. They join a later settlement once verified.",
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "partners-branches",
-    title: "Partners, branches, PINs & standees",
-    summary: "Setting up a café: why each field exists, how PINs work, printing the counter standee.",
-    category: "Screens",
+    title: "Add a café and its branches",
+    summary: "Set up a café company and its branches, hand over the PIN, and print the standee and cashier guide.",
+    category: "Workflows",
     roles: ["ADMIN", "FINANCE", "SUPPORT"],
     screen: "/admin/partners",
     sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: PARTNERS_STEPS }] },
       {
         id: "partner",
         heading: "Partner (the café company)",
@@ -428,12 +477,13 @@ export const HELP_ARTICLES: HelpArticle[] = [
   },
   {
     slug: "campaigns",
-    title: "Campaigns: offer terms & budgets",
-    summary: "Fixed vs percent offers, caps, minimum bill, validity, budgets, and how the discount is calculated.",
-    category: "Screens",
+    title: "Set up a campaign",
+    summary: "Fixed or percentage offers, caps, minimum bill, validity and budget, and how the discount is calculated.",
+    category: "Workflows",
     roles: ["ADMIN"],
     screen: "/admin/campaigns",
     sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: CAMPAIGNS_STEPS }] },
       {
         id: "fields",
         heading: "Fields",
@@ -515,240 +565,14 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
-    slug: "settlements",
-    title: "Settlements: paying cafés",
-    summary: "Draft → Approved → Paid, the four-eyes rule, the CSV statement, and payment references.",
-    category: "Screens",
-    roles: ["FINANCE", "ADMIN"],
-    screen: "/admin/settlements",
-    sections: [
-      {
-        id: "flow",
-        heading: "The three steps",
-        blocks: [
-          {
-            kind: "steps",
-            items: [
-              "**Create draft**: pick a partner and a period. The draft collects every **Verified** redemption of that partner in the period that isn't in another settlement yet. The total is the sum of their discounts.",
-              "**Approve**: a **different** finance/admin user checks the draft and approves it. The person who created the draft can't approve it (the four-eyes rule).",
-              "**Mark paid**: after sending the money, record the bank transaction reference or bKash TrxID. A Paid settlement can never be changed.",
-            ],
-          },
-        ],
-      },
-      {
-        id: "fields",
-        heading: "Fields",
-        blocks: [
-          {
-            kind: "fields",
-            items: [
-              {
-                name: "Ready to pay (overview)",
-                why: "Per partner: verified, unsettled discounts waiting for a draft.",
-              },
-              {
-                name: "Period start / end",
-                why: "Which redemptions to include, by redemption date (Dhaka). Usually a calendar month or fortnight, as agreed in the contract.",
-              },
-              {
-                name: "Total",
-                why: "Sum of included discounts. This is the amount to transfer.",
-              },
-              {
-                name: "Created / Approved / Paid by",
-                why: "Who did each step and when. Together with the audit log, this is the paper trail for accounting.",
-              },
-              {
-                name: "Payment reference",
-                why: "Bank transaction ref or bKash TrxID. Lets anyone trace the transfer later.",
-              },
-              {
-                name: "Download CSV statement",
-                why: "Line-by-line list (ref, branch, date, bill, discount) to send to the café with the payment.",
-              },
-            ],
-          },
-          {
-            kind: "note",
-            tone: "info",
-            text: "Redemptions that are still Receipt needed, To review or Disputed are not included. They join a later settlement once verified.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "sms",
-    title: "SMS: credit & delivery log",
-    summary: "Check gateway credit, find out whether a customer's code was sent, and what each gateway error means.",
-    category: "Screens",
-    roles: ["SUPPORT", "FINANCE", "ADMIN"],
-    screen: "/admin/sms",
-    sections: [
-      {
-        id: "purpose",
-        heading: "What this screen is for",
-        blocks: [
-          {
-            kind: "p",
-            text: "Every SMS the app sends (login codes, branch alerts, receipt links, expiry reminders) is recorded here, **one row per attempt**. When a customer says \"the code never arrived\", search their number: you'll see whether we sent it and, if not, the gateway's exact reason.",
-          },
-          {
-            kind: "note",
-            tone: "info",
-            text: "Message text is never shown here: login codes are never stored at all, and other messages can contain amounts or private upload links. Phone numbers are partly hidden.",
-          },
-        ],
-      },
-      {
-        id: "fields",
-        heading: "Fields",
-        blocks: [
-          {
-            kind: "fields",
-            items: [
-              {
-                name: "Gateway credit",
-                why: "Prepaid balance at BulkSMSBD, in taka. It turns amber when it is low. At zero, **no login codes or branch alerts go out**, so top up before that.",
-                tip: "The figure is refreshed at most once a minute.",
-              },
-              {
-                name: "Sent / Failed, last 24h",
-                why: "Quick health check. A sudden jump in failures usually means credit, sender ID or IP-whitelist trouble (see codes below).",
-              },
-              { name: "To", why: "The number the SMS went to, partly hidden. Search with the full number to filter." },
-              {
-                name: "Type",
-                why: "Login code, Branch alert (to the café, with the ref), Receipt link (to the customer after redeeming), Expiry reminder.",
-              },
-              {
-                name: "Try",
-                why: "Temporary errors are retried up to 3 times; each try is its own row. Permanent errors (bad number, no credit) stop after the first try.",
-              },
-              {
-                name: "Gateway reply",
-                why: "For failures, the gateway code and reason. For successes, the provider name and its message reference.",
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "codes",
-        heading: "Gateway error codes",
-        blocks: [
-          {
-            kind: "table",
-            head: ["Code", "Meaning", "What to do"],
-            rows: [
-              ["1001", "Invalid number", "Customer/branch number is wrong. Check it; customers can log in by email instead."],
-              ["1002, 1013–1017", "Sender ID wrong, disabled or not priced", "Admin: check the sender ID with BulkSMSBD."],
-              ["1007, 1006", "Balance insufficient / expired", "Admin/finance: top up the BulkSMSBD account."],
-              [
-                "1012",
-                "Masking SMS must be in Bengali",
-                "Admin: the sender ID is a masking ID with a Bengali-only rule; ask BulkSMSBD to allow English.",
-              ],
-              ["1018–1021, 1011, 1031", "Gateway account problem", "Admin: contact BulkSMSBD."],
-              ["1032", "Server IP not whitelisted", "Admin: whitelist the server's IP address in the BulkSMSBD panel (the error names the IP)."],
-              ["1003", "Required field missing", "Configuration problem (API key or sender ID empty). Admin: check the SMS settings."],
-              ["1005, network", "Temporary gateway/network problem", "Retried automatically. If it persists, contact BulkSMSBD."],
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
-    slug: "email",
-    title: "Email: delivery log",
-    summary: "Find out whether a customer's login code or other email was sent, and why one failed.",
-    category: "Screens",
-    roles: ["SUPPORT", "FINANCE", "ADMIN"],
-    screen: "/admin/emails",
-    sections: [
-      {
-        id: "purpose",
-        heading: "What this screen is for",
-        blocks: [
-          {
-            kind: "p",
-            text: 'Every email the app sends (login codes, request decisions, receipt links, expiry reminders) is recorded here, **one row per email**. Login codes go out **by email only**, so when a customer says "the code never arrived", search their address here first.',
-          },
-          {
-            kind: "note",
-            tone: "info",
-            text: "Email text is never stored: login codes and private upload links stay out of the database. You see the subject, never the content. Addresses are partly hidden; search with the full address to filter.",
-          },
-        ],
-      },
-      {
-        id: "fields",
-        heading: "Fields",
-        blocks: [
-          {
-            kind: "fields",
-            items: [
-              {
-                name: "Sending from",
-                why: "The address customers see emails from, and the provider (Resend). If it says development, no real emails go out.",
-              },
-              {
-                name: "Sent / Failed, last 24h",
-                why: "Quick health check. Several failures in a row usually mean a problem with the Resend account, key or domain (see below).",
-              },
-              { name: "To", why: "The recipient, partly hidden. Rows of deleted accounts show [deleted]." },
-              { name: "Type", why: "Login code, Request decision (approved/rejected), Receipt link (after redeeming), Expiry reminder." },
-              { name: "Subject", why: "The email's subject line, to tell messages apart." },
-              {
-                name: "Provider reply",
-                why: "For failures, Resend's reason. For successes, the provider and Resend's message ID (useful if you contact Resend support).",
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "sent-not-received",
-        heading: "Sent, but the customer didn't get it",
-        blocks: [
-          {
-            kind: "p",
-            text: "**Sent** means Resend accepted the email; delivery to the inbox happens after that. Ask the customer to check spam/promotions and to search for the subject. Check the address for typos: the code goes to the email on their account, which may differ from the one they typed.",
-          },
-        ],
-      },
-      {
-        id: "errors",
-        heading: "Common failures",
-        blocks: [
-          {
-            kind: "table",
-            head: ["Reply contains", "Meaning", "What to do"],
-            rows: [
-              ["403 ... verify a domain", "The sending domain isn't verified in Resend", "Admin: check the domain's status in Resend → Domains."],
-              [
-                "401 / 403 ... API key",
-                "The Resend key is wrong, revoked or lacks sending access",
-                "Admin: create a new Sending-access key and update the server settings.",
-              ],
-              ["422", "Resend refused the address (invalid or blocked)", "Check the customer's address for typos."],
-              ["429 / 5xx / network", "Resend busy or unreachable", "Retried automatically once. If it keeps happening, check status.resend.com."],
-            ],
-          },
-        ],
-      },
-    ],
-  },
-  {
     slug: "staff",
-    title: "Staff accounts & roles",
-    summary: "Adding colleagues, roles and permissions, temporary passwords, deactivating.",
-    category: "Screens",
+    title: "Add and manage staff",
+    summary: "Add colleagues, choose roles, send one-time passwords and deactivate people who leave.",
+    category: "Workflows",
     roles: ["ADMIN"],
     screen: "/admin/staff",
     sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: STAFF_STEPS }] },
       {
         id: "permissions",
         heading: "What each role can do",
@@ -811,60 +635,12 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     ],
   },
-  {
-    slug: "audit-log",
-    title: "Audit log",
-    summary: "What gets recorded and how to read an entry.",
-    category: "Screens",
-    roles: ["ADMIN"],
-    screen: "/admin/audit",
-    sections: [
-      {
-        id: "purpose",
-        heading: "What it's for",
-        blocks: [
-          {
-            kind: "p",
-            text: 'A permanent, read-only record of important actions: who did what, to which record, when, and any details (for example a role change "from Support to Finance"). Use it to answer "who approved this?", "when was this PIN reset?" or "who looked at this receipt?".',
-          },
-        ],
-      },
-      {
-        id: "actions",
-        heading: "Common actions",
-        blocks: [
-          {
-            kind: "table",
-            head: ["Action", "Meaning"],
-            rows: [
-              ["offer_request.submitted / approved / rejected", "Invoice claim lifecycle"],
-              ["voucher.redeemed", "PIN accepted at a café"],
-              ["voucher.pin_failed / pin_locked", "Wrong PIN typed / voucher locked for 15 min"],
-              ["voucher.expired_batch", "Hourly job expired old vouchers"],
-              ["redemption.receipt_uploaded / receipt_viewed", "Customer uploaded a photo / staff opened it"],
-              ["settlement.created / approved / paid", "Settlement steps"],
-              ["branch.created / branch.pin_reset", "Café setup and PIN changes"],
-              ["campaign.created / updated, partner.created", "Setup changes"],
-              ["staff.created / role_changed / password_reset / deactivated", "Staff management"],
-              ["customer.data_exported / deleted", "Customer privacy requests"],
-            ],
-          },
-          {
-            kind: "note",
-            tone: "info",
-            text: 'Actor "System" means an automatic job; "Customer" means the customer did it themselves.',
-          },
-        ],
-      },
-    ],
-  },
-
-  // ---------------------------------------------------------------- Support playbook
+  // ---------------------------------------------------------------- Customer support
   {
     slug: "playbook-login",
     title: "Customer can't log in",
     summary: 'No code arrived, code rejected, "No offers found", too many attempts.',
-    category: "Support playbook",
+    category: "Customer support",
     roles: ["SUPPORT", "ADMIN"],
     sections: [
       {
@@ -898,7 +674,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
               [
                 '"The code never arrived"',
                 "Spam/promotions folder, typo in the email address, or a different email than the one on the invoice",
-                'Search their address in **Email**: a Sent row means we handed it over, so ask them to check spam/promotions and search for "Hosting.com Perks login code"; a Failed row shows why. Search Requests by their email to confirm which address is on file.',
+                'Search their address in **Email**: a Sent row means we handed it over, so ask them to check spam/promotions and search for "Hosting.com Coffee Campaign login code"; a Failed row shows why. Search Requests by their email to confirm which address is on file.',
               ],
               [
                 '"Too many attempts"',
@@ -911,7 +687,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "reply",
             label: "Reply: code not arriving",
-            text: "Hi! Login codes are emailed to the address you used when you submitted your invoice. Please check your spam/promotions folder and search for \"Hosting.com Perks login code\". Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
+            text: "Hi! Login codes are emailed to the address you used when you submitted your invoice. Please check your spam/promotions folder and search for \"Hosting.com Coffee Campaign login code\". Each code works for 5 minutes. If you've requested several, please wait 15 minutes and try once more. You don't need your invoice number to log in.",
           },
         ],
       },
@@ -921,7 +697,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     slug: "playbook-voucher",
     title: "Voucher problems at the café",
     summary: "Not accepted, PIN locked, bill too small, expired, wrong branch.",
-    category: "Support playbook",
+    category: "Customer support",
     roles: ["SUPPORT", "ADMIN"],
     sections: [
       {
@@ -973,7 +749,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     slug: "playbook-receipt",
     title: "Receipt uploads",
     summary: "How customers upload, missing receipts, unreadable photos.",
-    category: "Support playbook",
+    category: "Customer support",
     roles: ["SUPPORT", "ADMIN"],
     sections: [
       {
@@ -1002,7 +778,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           {
             kind: "reply",
             label: "Reply: please upload receipt",
-            text: 'Hi! Thanks for using your Hosting.com coffee voucher. Could you upload a clear photo of the café receipt? Open your Perks dashboard and tap "Upload" under "Receipt photo needed" (or use the link in the SMS/email we sent after your visit). Make sure the total and the "Hosting.com Voucher" line are visible. Thank you!',
+            text: 'Hi! Thanks for using your Hosting.com coffee voucher. Could you upload a clear photo of the café receipt? Open your Coffee Campaign dashboard and tap "Upload" under "Receipt photo needed" (or use the link in the SMS/email we sent after your visit). Make sure the total and the "Hosting.com Voucher" line are visible. Thank you!',
           },
         ],
       },
@@ -1012,7 +788,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     slug: "playbook-account",
     title: "Invoices, contacts & privacy requests",
     summary: "Rejected invoices, changing email/phone, data export and account deletion.",
-    category: "Support playbook",
+    category: "Customer support",
     roles: ["SUPPORT", "ADMIN"],
     sections: [
       {
@@ -1047,7 +823,6 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     ],
   },
-
   // ---------------------------------------------------------------- Reference
   {
     slug: "statuses",
@@ -1229,9 +1004,221 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     ],
   },
+  {
+    slug: "email",
+    title: "Email delivery log",
+    summary: "Find out whether a customer's login code or other email was sent, and why one failed.",
+    category: "Reference",
+    roles: ["SUPPORT", "FINANCE", "ADMIN"],
+    screen: "/admin/emails",
+    sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: EMAIL_STEPS }] },
+      {
+        id: "purpose",
+        heading: "What this screen is for",
+        blocks: [
+          {
+            kind: "p",
+            text: 'Every email the app sends (login codes, request decisions, receipt links, expiry reminders) is recorded here, **one row per email**. Login codes go out **by email only**, so when a customer says "the code never arrived", search their address here first.',
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: "Email text is never stored: login codes and private upload links stay out of the database. You see the subject, never the content. Addresses are partly hidden; search with the full address to filter.",
+          },
+        ],
+      },
+      {
+        id: "fields",
+        heading: "Fields",
+        blocks: [
+          {
+            kind: "fields",
+            items: [
+              {
+                name: "Sending from",
+                why: "The address customers see emails from, and the provider (Resend). If it says development, no real emails go out.",
+              },
+              {
+                name: "Sent / Failed, last 24h",
+                why: "Quick health check. Several failures in a row usually mean a problem with the Resend account, key or domain (see below).",
+              },
+              { name: "To", why: "The recipient, partly hidden. Rows of deleted accounts show [deleted]." },
+              { name: "Type", why: "Login code, Request decision (approved/rejected), Receipt link (after redeeming), Expiry reminder." },
+              { name: "Subject", why: "The email's subject line, to tell messages apart." },
+              {
+                name: "Provider reply",
+                why: "For failures, Resend's reason. For successes, the provider and Resend's message ID (useful if you contact Resend support).",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "sent-not-received",
+        heading: "Sent, but the customer didn't get it",
+        blocks: [
+          {
+            kind: "p",
+            text: "**Sent** means Resend accepted the email; delivery to the inbox happens after that. Ask the customer to check spam/promotions and to search for the subject. Check the address for typos: the code goes to the email on their account, which may differ from the one they typed.",
+          },
+        ],
+      },
+      {
+        id: "errors",
+        heading: "Common failures",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Reply contains", "Meaning", "What to do"],
+            rows: [
+              ["403 ... verify a domain", "The sending domain isn't verified in Resend", "Admin: check the domain's status in Resend → Domains."],
+              [
+                "401 / 403 ... API key",
+                "The Resend key is wrong, revoked or lacks sending access",
+                "Admin: create a new Sending-access key and update the server settings.",
+              ],
+              ["422", "Resend refused the address (invalid or blocked)", "Check the customer's address for typos."],
+              ["429 / 5xx / network", "Resend busy or unreachable", "Retried automatically once. If it keeps happening, check status.resend.com."],
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "sms",
+    title: "SMS credit & delivery log",
+    summary: "Check gateway credit, find out whether a customer's code was sent, and what each gateway error means.",
+    category: "Reference",
+    roles: ["SUPPORT", "FINANCE", "ADMIN"],
+    screen: "/admin/sms",
+    sections: [
+      {
+        id: "purpose",
+        heading: "What this screen is for",
+        blocks: [
+          {
+            kind: "p",
+            text: "Every SMS the app sends (login codes, branch alerts, receipt links, expiry reminders) is recorded here, **one row per attempt**. When a customer says \"the code never arrived\", search their number: you'll see whether we sent it and, if not, the gateway's exact reason.",
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: "Message text is never shown here: login codes are never stored at all, and other messages can contain amounts or private upload links. Phone numbers are partly hidden.",
+          },
+        ],
+      },
+      {
+        id: "fields",
+        heading: "Fields",
+        blocks: [
+          {
+            kind: "fields",
+            items: [
+              {
+                name: "Gateway credit",
+                why: "Prepaid balance at BulkSMSBD, in taka. It turns amber when it is low. At zero, **no login codes or branch alerts go out**, so top up before that.",
+                tip: "The figure is refreshed at most once a minute.",
+              },
+              {
+                name: "Sent / Failed, last 24h",
+                why: "Quick health check. A sudden jump in failures usually means credit, sender ID or IP-whitelist trouble (see codes below).",
+              },
+              { name: "To", why: "The number the SMS went to, partly hidden. Search with the full number to filter." },
+              {
+                name: "Type",
+                why: "Login code, Branch alert (to the café, with the ref), Receipt link (to the customer after redeeming), Expiry reminder.",
+              },
+              {
+                name: "Try",
+                why: "Temporary errors are retried up to 3 times; each try is its own row. Permanent errors (bad number, no credit) stop after the first try.",
+              },
+              {
+                name: "Gateway reply",
+                why: "For failures, the gateway code and reason. For successes, the provider name and its message reference.",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "codes",
+        heading: "Gateway error codes",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Code", "Meaning", "What to do"],
+            rows: [
+              ["1001", "Invalid number", "Customer/branch number is wrong. Check it; customers can log in by email instead."],
+              ["1002, 1013–1017", "Sender ID wrong, disabled or not priced", "Admin: check the sender ID with BulkSMSBD."],
+              ["1007, 1006", "Balance insufficient / expired", "Admin/finance: top up the BulkSMSBD account."],
+              [
+                "1012",
+                "Masking SMS must be in Bengali",
+                "Admin: the sender ID is a masking ID with a Bengali-only rule; ask BulkSMSBD to allow English.",
+              ],
+              ["1018–1021, 1011, 1031", "Gateway account problem", "Admin: contact BulkSMSBD."],
+              ["1032", "Server IP not whitelisted", "Admin: whitelist the server's IP address in the BulkSMSBD panel (the error names the IP)."],
+              ["1003", "Required field missing", "Configuration problem (API key or sender ID empty). Admin: check the SMS settings."],
+              ["1005, network", "Temporary gateway/network problem", "Retried automatically. If it persists, contact BulkSMSBD."],
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "audit-log",
+    title: "Audit log",
+    summary: "What gets recorded and how to read an entry.",
+    category: "Reference",
+    roles: ["ADMIN"],
+    screen: "/admin/audit",
+    sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: AUDIT_STEPS }] },
+      {
+        id: "purpose",
+        heading: "What it's for",
+        blocks: [
+          {
+            kind: "p",
+            text: 'A permanent, read-only record of important actions: who did what, to which record, when, and any details (for example a role change "from Support to Finance"). Use it to answer "who approved this?", "when was this PIN reset?" or "who looked at this receipt?".',
+          },
+        ],
+      },
+      {
+        id: "actions",
+        heading: "Common actions",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Action", "Meaning"],
+            rows: [
+              ["offer_request.submitted / approved / rejected", "Invoice claim lifecycle"],
+              ["voucher.redeemed", "PIN accepted at a café"],
+              ["voucher.pin_failed / pin_locked", "Wrong PIN typed / voucher locked for 15 min"],
+              ["voucher.expired_batch", "Hourly job expired old vouchers"],
+              ["redemption.receipt_uploaded / receipt_viewed", "Customer uploaded a photo / staff opened it"],
+              ["settlement.created / approved / paid", "Settlement steps"],
+              ["branch.created / branch.pin_reset", "Café setup and PIN changes"],
+              ["campaign.created / updated, partner.created", "Setup changes"],
+              ["staff.created / role_changed / password_reset / deactivated", "Staff management"],
+              ["customer.data_exported / deleted", "Customer privacy requests"],
+            ],
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: 'Actor "System" means an automatic job; "Customer" means the customer did it themselves.',
+          },
+        ],
+      },
+    ],
+  },
 ];
 
-export const HELP_CATEGORIES = ["Start here", "Screens", "Support playbook", "Reference"] as const;
+export const HELP_CATEGORIES = ["Start here", "Workflows", "Customer support", "Reference"] as const;
 
 export function findHelpArticle(slug: string): HelpArticle | undefined {
   return HELP_ARTICLES.find((a) => a.slug === slug);
@@ -1251,6 +1238,7 @@ export function helpSearchText(a: HelpArticle): string {
       else if (b.kind === "list" || b.kind === "steps") parts.push(...b.items);
       else if (b.kind === "fields") for (const f of b.items) parts.push(f.name, f.why, f.tip ?? "");
       else if (b.kind === "table") parts.push(...b.head, ...b.rows.flat());
+      else if (b.kind === "walkthrough") for (const st of b.steps) parts.push(st.title, st.text, st.tip ?? "");
       else parts.push(b.label, b.text);
     }
   }

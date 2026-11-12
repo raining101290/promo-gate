@@ -18,7 +18,7 @@ export default async function StaffLoginPage({ searchParams }: { searchParams: P
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Staff login</CardTitle>
-          <CardDescription>Hosting.com Perks administration</CardDescription>
+          <CardDescription>Hosting.com Coffee Campaign administration</CardDescription>
         </CardHeader>
         <CardContent>
           <StaffLoginForm nextPath={nextPath} />

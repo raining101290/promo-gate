@@ -14,7 +14,7 @@ import { getCustomerVoucher } from "@/server/services/customer-portal";
 import { ExpiryCountdown } from "./expiry-countdown";
 import { RedeemButton } from "./redeem-button";
 
-export const metadata: Metadata = { title: "Voucher · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Voucher · Hosting.com Coffee Campaign" };
 
 /** "AbCdEfGh..." -> "AbCd EfGh ..." for readability */
 function chunk(code: string) {

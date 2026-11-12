@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { CAFE_GUIDE, CUSTOMER_GUIDE } from "@/lib/guide/content";
 import { HELP_ARTICLES, helpSearchText } from "@/lib/help/articles";
 import { computeDiscount, quoteRedemption } from "@/lib/money";
 import type { OfferTerms } from "@/lib/offer";
@@ -46,6 +47,16 @@ describe("knowledge base structure", () => {
     const used = pages.flatMap((f) => [...readFileSync(path.join(root, f), "utf8").matchAll(/<HelpLink slug="([^"]+)"/g)].map((m) => m[1]));
     expect(used.length).toBeGreaterThanOrEqual(8);
     for (const s of used) expect(slugs.has(s), s).toBe(true);
+  });
+});
+
+describe("guide screenshots", () => {
+  it("every screenshot used by Help and the public guides exists (run `npm run guide:shots`)", () => {
+    const fromHelp = HELP_ARTICLES.flatMap((a) => a.sections.flatMap((s) => s.blocks)).flatMap((b) => (b.kind === "walkthrough" ? b.steps : []));
+    const fromGuides = [...CUSTOMER_GUIDE, ...CAFE_GUIDE].flatMap((p) => p.steps);
+    const srcs = [...fromHelp, ...fromGuides].flatMap((st) => (st.shot ? [st.shot.src] : []));
+    expect(srcs.length).toBeGreaterThan(20);
+    for (const src of new Set(srcs)) expect(existsSync(path.join("public", src)), src).toBe(true);
   });
 });
 

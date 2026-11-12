@@ -89,7 +89,7 @@ export class ResendEmailDriver implements EmailProvider {
   }
 
   async send(to: string, body: string, opts?: { subject?: string }) {
-    const subject = opts?.subject ?? "Hosting.com Perks";
+    const subject = opts?.subject ?? "Hosting.com Coffee Campaign";
     const key = randomUUID();
     try {
       return { providerRef: (await this.post(to, body, subject, key)).id };

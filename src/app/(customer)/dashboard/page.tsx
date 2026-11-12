@@ -11,7 +11,7 @@ import { formatDhakaDate } from "@/lib/time";
 import { getCustomerSession } from "@/server/auth/customer";
 import { getCustomerDashboard } from "@/server/services/customer-portal";
 
-export const metadata: Metadata = { title: "My vouchers · Hosting.com Perks" };
+export const metadata: Metadata = { title: "My vouchers · Hosting.com Coffee Campaign" };
 
 export default async function DashboardPage() {
   // Middleware guards this route; re-check here (defence in depth).
@@ -149,7 +149,10 @@ export default async function DashboardPage() {
             </Card>
           </section>
         )}
-        <p className="text-center text-sm">
+        <p className="flex justify-center gap-4 text-sm">
+          <Link href="/guide" className="text-muted-foreground underline underline-offset-4">
+            How it works
+          </Link>
           <Link href="/dashboard/account" className="text-muted-foreground underline underline-offset-4">
             Your data &amp; account
           </Link>

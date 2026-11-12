@@ -1,4 +1,4 @@
-# Hosting.com Perks
+# Hosting.com Coffee Campaign
 
 Promotion app: hosting.com customers submit a paid invoice; support issues a single-use, expiring QR voucher,
 redeemed at partner cafés in Bangladesh (customer scans the branch QR, enters the bill, cashier types the
@@ -93,7 +93,7 @@ prisma7.config.ts        # Prisma 7 config (schema path, seed cmd, DATABASE_URL)
 - Zod schemas shared by forms and actions live in `src/lib/schemas`.
 
 ## UI conventions
-- Customer pages **mobile-first** (~360px, big taps); staff pages desktop-first shadcn tables. Staff help `/admin/help` = `src/lib/help/articles.ts`; update with behaviour changes (`tests/unit/help.test.ts`).
+- Customer pages **mobile-first** (~360px, big taps); staff pages desktop-first shadcn tables. Staff help `/admin/help` = `src/lib/help/articles.ts` (+ `walkthroughs.ts`); public guide `/guide` = `src/lib/guide/content.ts`. Update both with behaviour changes (`tests/unit/help.test.ts`); refresh screenshots with `npm run guide:shots` (resets test DB).
 
 ## Security
 - OTPs are short-lived, hashed, attempt-limited and single-use.

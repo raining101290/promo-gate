@@ -1,4 +1,4 @@
-// Hosting.com Perks data model.
+// Hosting.com Coffee Campaign data model.
 // Conventions: money = Int paisa (1 BDT = 100). Percentages = Int basis points (15% = 1500).
 // All DateTime values are UTC; convert to Asia/Dhaka only for display.
 

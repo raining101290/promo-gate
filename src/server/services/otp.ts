@@ -64,11 +64,11 @@ export async function requestOtp(login: LoginTarget, ctx: { ip: string }): Promi
   if (!created) return { ok: false, reason: "rate_limited" };
 
   // Side effect after commit. A delivery failure still returns the generic message (no enumeration).
-  const body = `Your Hosting.com Perks login code is ${code}. It expires in 5 minutes. Do not share it.`;
+  const body = `Your Hosting.com Coffee Campaign login code is ${code}. It expires in 5 minutes. Do not share it.`;
   try {
     if (channel === "EMAIL") {
       // Logged like every email; the code is only in the body, which is never stored.
-      await sendEmail(target, "Your Hosting.com Perks login code", body, { purpose: "otp" });
+      await sendEmail(target, "Your Hosting.com Coffee Campaign login code", body, { purpose: "otp" });
     } else {
       // Retried + logged like every SMS, but the stored body is redacted: codes never reach the DB.
       await sendSms(target, body, { purpose: "otp", logBody: "Login code [redacted]" });

@@ -11,8 +11,8 @@ export const metadata = { title: "Cashier guide" };
 
 const STEPS = [
   {
-    en: "The customer scans the Hosting.com Perks standee at the counter.",
-    bn: "গ্রাহক কাউন্টারে রাখা Hosting.com Perks স্ট্যান্ডিটি স্ক্যান করবেন।",
+    en: "The customer scans the Hosting.com Coffee Campaign standee at the counter.",
+    bn: "গ্রাহক কাউন্টারে রাখা Hosting.com Coffee Campaign স্ট্যান্ডিটি স্ক্যান করবেন।",
   },
   {
     en: "The customer shows the voucher amount on their phone. Check that it shows YOUR branch name.",
@@ -55,7 +55,7 @@ export default async function CashierGuidePage({ params }: { params: Promise<{ i
         className="mx-auto flex h-[297mm] w-[210mm] flex-col overflow-hidden bg-white px-[16mm] py-[14mm] text-neutral-900 shadow-lg ring-1 ring-neutral-200 print:shadow-none print:ring-0"
       >
         <header className="border-b-2 border-neutral-900 pb-[4mm]">
-          <p className="text-[9pt] font-semibold tracking-[0.2em] text-neutral-500 uppercase">Hosting.com Perks · {partner.name}</p>
+          <p className="text-[9pt] font-semibold tracking-[0.2em] text-neutral-500 uppercase">Hosting.com Coffee Campaign · {partner.name}</p>
           <h1 className="mt-[1mm] text-[22pt] leading-tight font-semibold">Cashier guide: Hosting.com Voucher</h1>
           <p className={`${bangla.className} text-[14pt]`}>ক্যাশিয়ার নির্দেশিকা: Hosting.com ভাউচার</p>
         </header>

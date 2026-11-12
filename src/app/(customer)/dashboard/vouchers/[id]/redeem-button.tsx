@@ -24,7 +24,7 @@ export function RedeemButton({ voucherId }: { voucherId: string }) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Scan the café&apos;s QR</DialogTitle>
-          <DialogDescription>It&apos;s on the Hosting.com Perks standee at the counter.</DialogDescription>
+          <DialogDescription>It&apos;s on the Hosting.com Coffee Campaign standee at the counter.</DialogDescription>
         </DialogHeader>
         {open && <BranchQrScanner voucherId={voucherId} />}
       </DialogContent>

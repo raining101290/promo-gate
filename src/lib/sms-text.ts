@@ -67,11 +67,11 @@ export function branchRedemptionSms(r: {
 
 export function customerReceiptSms(r: { branchName: string; branchCode: string; discount: number; ref: string; uploadUrl: string }): string {
   const name = toSmsAscii(r.branchName) || r.branchCode;
-  const tail = `Ref ${r.ref}. Upload receipt photo: ${r.uploadUrl}`;
+  const tail = `Ref ${r.ref}. Upload receipt: ${r.uploadUrl}`;
   // Never cut the link: shorten the name, then drop it; a long URL may exceed one segment rather than break.
   return (
-    fitName(name, (n) => `Hosting.com Perks: ${plainTaka(r.discount)} BDT voucher used at ${n}. ${tail}`, "") ??
-    `Hosting.com Perks: ${plainTaka(r.discount)} BDT voucher used. ${tail}`
+    fitName(name, (n) => `Hosting.com Coffee Campaign: ${plainTaka(r.discount)} BDT voucher used at ${n}. ${tail}`, "") ??
+    `Hosting.com Coffee Campaign: ${plainTaka(r.discount)} BDT voucher used. ${tail}`
   );
 }
 
@@ -79,5 +79,5 @@ const dayMonth = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Dhaka", day:
 
 export function expiryReminderSms(r: { discountLabel: string; expiresAt: Date; dashboardUrl: string }): string {
   // All parts are ASCII already (label from plainTaka/percent, en-GB date, URL); no name to shorten.
-  return `Hosting.com Perks: your ${r.discountLabel} coffee voucher expires on ${dayMonth.format(r.expiresAt)}. Use it at any partner cafe: ${r.dashboardUrl}`;
+  return `Hosting.com Coffee Campaign: your ${r.discountLabel} coffee voucher expires on ${dayMonth.format(r.expiresAt)}. Use it at any partner cafe: ${r.dashboardUrl}`;
 }

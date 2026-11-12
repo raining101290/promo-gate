@@ -162,8 +162,8 @@ export async function approveOfferRequest(requestId: string, campaignId: string,
     const until = formatDhakaDate(result.expiresAt);
     const link = `${appUrl()}/dashboard`;
     await notifyCustomer(result.customerId, {
-      sms: `Hosting.com Perks: your coffee voucher (${offer}) is ready! Valid until ${until}. View it: ${link}`,
-      emailSubject: `Your Hosting.com Perks voucher is ready (${offer})`,
+      sms: `Hosting.com Coffee Campaign: your coffee voucher (${offer}) is ready! Valid until ${until}. View it: ${link}`,
+      emailSubject: `Your Hosting.com Coffee Campaign voucher is ready (${offer})`,
       purpose: "review",
       email: `Good news! Your invoice was verified and your voucher (${offer}) is ready.\n\nValid until ${until} (Dhaka time). Use it at any partner coffee shop.\n\nView your voucher: ${link}`,
     });
@@ -207,8 +207,8 @@ export async function rejectOfferRequest(requestId: string, reason: string, staf
     const link = `${appUrl()}/dashboard`;
     const why = asSentence(reason);
     await notifyCustomer(result.customerId, {
-      sms: `Hosting.com Perks: invoice ${result.invoiceNumber} was not approved. Reason: ${why} Details: ${link}`,
-      emailSubject: "Update on your Hosting.com Perks request",
+      sms: `Hosting.com Coffee Campaign: invoice ${result.invoiceNumber} was not approved. Reason: ${why} Details: ${link}`,
+      emailSubject: "Update on your Hosting.com Coffee Campaign request",
       purpose: "review",
       email: `We reviewed invoice ${result.invoiceNumber} and couldn't approve it.\n\nReason: ${why}\n\nIf you think this is a mistake, reply to this email. You can see your requests here: ${link}`,
     });

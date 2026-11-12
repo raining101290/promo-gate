@@ -1,3 +1,4 @@
+import { Walkthrough } from "@/components/guide/walkthrough";
 import { CopyReply } from "@/components/staff/copy-reply";
 import { HelpText } from "@/components/staff/help-text";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -97,5 +98,7 @@ function HelpBlockView({ block: b }: { block: HelpBlock }) {
       );
     case "reply":
       return <CopyReply label={b.label} text={b.text} />;
+    case "walkthrough":
+      return <Walkthrough steps={b.steps} />;
   }
 }

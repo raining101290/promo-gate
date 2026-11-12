@@ -7,7 +7,7 @@ import { branchAcceptsVouchers, getBranchByCode, listRedeemableVouchers } from "
 
 import { RedeemFlow } from "./redeem-flow";
 
-export const metadata: Metadata = { title: "Redeem · Hosting.com Perks" };
+export const metadata: Metadata = { title: "Redeem · Hosting.com Coffee Campaign" };
 
 export default async function RedeemPage({
   params,

@@ -43,7 +43,7 @@ export function SuccessScreen(p: Props) {
 
   const fresh = now ? now.getTime() < new Date(p.freshUntil).getTime() : p.initiallyFresh;
   const ago = now ? Math.max(0, Math.floor((now.getTime() - new Date(p.redeemedAt).getTime()) / 60_000)) : 0;
-  const marquee = fresh ? `VOUCHER ACCEPTED · ${p.reference} · HOSTING.COM PERKS · ` : `OLD CONFIRMATION · NOT VALID FOR A NEW PURCHASE · `;
+  const marquee = fresh ? `VOUCHER ACCEPTED · ${p.reference} · HOSTING.COM CAFÉ PASS · ` : `OLD CONFIRMATION · NOT VALID FOR A NEW PURCHASE · `;
 
   return (
     <main
