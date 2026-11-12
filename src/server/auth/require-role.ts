@@ -93,5 +93,7 @@ export const PERMISSIONS = {
   viewAudit: ["ADMIN"],
   /** SMS credit + delivery log (phones masked; no message bodies). */
   viewSms: ["SUPPORT", "FINANCE", "ADMIN"],
+  /** Email delivery log (addresses masked; subjects only, no bodies). */
+  viewEmail: ["SUPPORT", "FINANCE", "ADMIN"],
   manageStaff: ["ADMIN"],
 } as const satisfies Record<string, readonly StaffRole[]>;

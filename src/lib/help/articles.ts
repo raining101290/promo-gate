@@ -661,6 +661,87 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "email",
+    title: "Email: delivery log",
+    summary: "Find out whether a customer's login code or other email was sent, and why one failed.",
+    category: "Screens",
+    roles: ["SUPPORT", "FINANCE", "ADMIN"],
+    screen: "/admin/emails",
+    sections: [
+      {
+        id: "purpose",
+        heading: "What this screen is for",
+        blocks: [
+          {
+            kind: "p",
+            text: 'Every email the app sends (login codes, request decisions, receipt links, expiry reminders) is recorded here, **one row per email**. Login codes go out **by email only**, so when a customer says "the code never arrived", search their address here first.',
+          },
+          {
+            kind: "note",
+            tone: "info",
+            text: "Email text is never stored: login codes and private upload links stay out of the database. You see the subject, never the content. Addresses are partly hidden; search with the full address to filter.",
+          },
+        ],
+      },
+      {
+        id: "fields",
+        heading: "Fields",
+        blocks: [
+          {
+            kind: "fields",
+            items: [
+              {
+                name: "Sending from",
+                why: "The address customers see emails from, and the provider (Resend). If it says development, no real emails go out.",
+              },
+              {
+                name: "Sent / Failed, last 24h",
+                why: "Quick health check. Several failures in a row usually mean a problem with the Resend account, key or domain (see below).",
+              },
+              { name: "To", why: "The recipient, partly hidden. Rows of deleted accounts show [deleted]." },
+              { name: "Type", why: "Login code, Request decision (approved/rejected), Receipt link (after redeeming), Expiry reminder." },
+              { name: "Subject", why: "The email's subject line, to tell messages apart." },
+              {
+                name: "Provider reply",
+                why: "For failures, Resend's reason. For successes, the provider and Resend's message ID (useful if you contact Resend support).",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "sent-not-received",
+        heading: "Sent, but the customer didn't get it",
+        blocks: [
+          {
+            kind: "p",
+            text: "**Sent** means Resend accepted the email; delivery to the inbox happens after that. Ask the customer to check spam/promotions and to search for the subject. Check the address for typos: the code goes to the email on their account, which may differ from the one they typed.",
+          },
+        ],
+      },
+      {
+        id: "errors",
+        heading: "Common failures",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Reply contains", "Meaning", "What to do"],
+            rows: [
+              ["403 ... verify a domain", "The sending domain isn't verified in Resend", "Admin: check the domain's status in Resend → Domains."],
+              [
+                "401 / 403 ... API key",
+                "The Resend key is wrong, revoked or lacks sending access",
+                "Admin: create a new Sending-access key and update the server settings.",
+              ],
+              ["422", "Resend refused the address (invalid or blocked)", "Check the customer's address for typos."],
+              ["429 / 5xx / network", "Resend busy or unreachable", "Retried automatically once. If it keeps happening, check status.resend.com."],
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "staff",
     title: "Staff accounts & roles",
     summary: "Adding colleagues, roles and permissions, temporary passwords, deactivating.",
@@ -685,6 +766,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
               ["View settlements", "", "✓", "✓"],
               ["Create, approve, pay settlements", "", "✓", "✓"],
               ["SMS credit & delivery log", "✓", "✓", "✓"],
+              ["Email delivery log", "✓", "✓", "✓"],
               ["Audit log", "", "", "✓"],
               ["Manage staff", "", "", "✓"],
             ],
@@ -816,7 +898,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
               [
                 '"The code never arrived"',
                 "Spam/promotions folder, typo in the email address, or a different email than the one on the invoice",
-                'Ask them to check spam/promotions and search their inbox for "Hosting.com Perks login code". Search Requests by their email to confirm which address is on file.',
+                'Search their address in **Email**: a Sent row means we handed it over, so ask them to check spam/promotions and search for "Hosting.com Perks login code"; a Failed row shows why. Search Requests by their email to confirm which address is on file.',
               ],
               [
                 '"Too many attempts"',

@@ -125,6 +125,7 @@ describe("knowledge base matches the code", () => {
     expect(row("View settlements")).toEqual(tick(PERMISSIONS.viewSettlements));
     expect(row("Create, approve, pay settlements")).toEqual(tick(PERMISSIONS.manageSettlements));
     expect(row("SMS credit & delivery log")).toEqual(tick(PERMISSIONS.viewSms));
+    expect(row("Email delivery log")).toEqual(tick(PERMISSIONS.viewEmail));
     expect(row("Audit log")).toEqual(tick(PERMISSIONS.viewAudit));
     expect(row("Manage staff")).toEqual(tick(PERMISSIONS.manageStaff));
   });

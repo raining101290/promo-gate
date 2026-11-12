@@ -40,11 +40,18 @@ export async function exportCustomerData(customerId: string) {
   });
   if (!c) return { ok: false as const, reason: "not_found" as const };
 
-  const messages = await db.smsLog.findMany({
-    where: { toPhone: c.phone, status: "SENT" },
-    orderBy: { createdAt: "asc" },
-    select: { createdAt: true, purpose: true, body: true }, // OTP bodies are stored redacted
-  });
+  const [messages, emails] = await Promise.all([
+    db.smsLog.findMany({
+      where: { toPhone: c.phone, status: "SENT" },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true, purpose: true, body: true }, // OTP bodies are stored redacted
+    }),
+    db.emailLog.findMany({
+      where: { toEmail: c.email.toLowerCase(), status: "SENT" },
+      orderBy: { createdAt: "asc" },
+      select: { createdAt: true, purpose: true, subject: true }, // bodies are never stored
+    }),
+  ]);
 
   await writeAudit({ actorType: "CUSTOMER", actorId: customerId, action: "customer.data_exported", entityType: "Customer", entityId: customerId });
 
@@ -63,6 +70,7 @@ export async function exportCustomerData(customerId: string) {
         receiptUploaded: !!receiptImageKey,
       })),
       smsMessages: messages,
+      emails,
     },
   };
 }
@@ -70,7 +78,7 @@ export async function exportCustomerData(customerId: string) {
 /**
  * Self-service soft delete. Kept for accounting: redemptions (amounts, branch, dates, receipt photos)
  * and the invoice numbers on requests. Removed/scrubbed: contact details everywhere, OTP codes, SMS
- * copies sent to the customer. Active vouchers are voided; pending requests are closed.
+ * copies and email log entries for the customer. Active vouchers are voided; pending requests are closed.
  * The customer can't log in afterwards (their contacts no longer match) and existing sessions die
  * because every customer page/route re-checks deletedAt.
  */
@@ -87,6 +95,7 @@ export async function deleteCustomer(customerId: string) {
     });
     await tx.offerRequest.updateMany({ where: { customerId }, data: { submittedEmail: "[deleted]", submittedPhone: "[deleted]" } });
     await tx.smsLog.updateMany({ where: { toPhone: c.phone }, data: { toPhone: "[deleted]", body: "[deleted]" } });
+    await tx.emailLog.updateMany({ where: { toEmail: c.email.toLowerCase() }, data: { toEmail: "[deleted]", subject: "[deleted]" } });
     const otps = await tx.otpCode.deleteMany({ where: { OR: [{ customerId }, { target: c.email }, { target: c.phone }] } });
     await tx.customer.update({
       where: { id: customerId },

@@ -6,9 +6,8 @@ import { maskEmail, maskPhone } from "@/lib/phone";
 import type { LoginTarget } from "@/lib/schemas/auth";
 import { db } from "@/server/db";
 import { sessionSecret } from "@/server/env";
-import { getEmailProvider } from "@/server/providers/email";
 import { otpChannelEnabled } from "@/server/otp-channels";
-import { sendSms } from "@/server/services/notifications";
+import { sendEmail, sendSms } from "@/server/services/notifications";
 import { limit } from "@/server/rate-limit";
 import { writeAudit } from "@/server/services/audit";
 
@@ -68,7 +67,8 @@ export async function requestOtp(login: LoginTarget, ctx: { ip: string }): Promi
   const body = `Your Hosting.com Perks login code is ${code}. It expires in 5 minutes. Do not share it.`;
   try {
     if (channel === "EMAIL") {
-      await getEmailProvider().send(target, body, { subject: "Your Hosting.com Perks login code" });
+      // Logged like every email; the code is only in the body, which is never stored.
+      await sendEmail(target, "Your Hosting.com Perks login code", body, { purpose: "otp" });
     } else {
       // Retried + logged like every SMS, but the stored body is redacted: codes never reach the DB.
       await sendSms(target, body, { purpose: "otp", logBody: "Login code [redacted]" });

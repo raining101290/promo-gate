@@ -67,6 +67,11 @@ enum SmsStatus {
   FAILED
 }
 
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
 enum SettlementStatus {
   DRAFT
   APPROVED
@@ -314,6 +319,27 @@ model SmsLog {
   redemption Redemption? @relation(fields: [redemptionId], references: [id])
 
   @@index([redemptionId])
+}
+
+/// One row per email handed to the provider (sendEmail). The body is never stored: login codes and
+/// private upload links stay out of the database; the subject is enough to tell messages apart.
+model EmailLog {
+  id           String      @id @default(cuid())
+  redemptionId String?
+  /// Lower-cased recipient
+  toEmail      String
+  subject      String
+  provider     String
+  providerRef  String?
+  status       EmailStatus
+  /// Provider/transport error for FAILED sends
+  error        String?
+  /// e.g. otp, customer_receipt, review, expiry_reminder
+  purpose      String?
+  createdAt    DateTime    @default(now())
+
+  @@index([createdAt])
+  @@index([toEmail, createdAt])
 }
 
 model Settlement {

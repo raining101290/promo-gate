@@ -72,13 +72,54 @@ async function log(e: {
   }
 }
 
-export async function sendEmail(to: string, subject: string, body: string): Promise<boolean> {
+export type EmailPurpose = SmsPurpose;
+
+/**
+ * Sends one email and writes an EmailLog row (SENT, or FAILED + the provider's reason). The only way the app
+ * sends email. Never throws; returns whether the provider accepted it. The body is never stored (it can hold a
+ * login code or a private upload link); the subject must not contain secrets. The Resend driver already
+ * retries 429/5xx/network errors itself (idempotently), so there is one row per message, not per HTTP call.
+ */
+export async function sendEmail(to: string, subject: string, body: string, opts: { purpose: EmailPurpose; redemptionId?: string }): Promise<boolean> {
+  let provider = "unconfigured";
   try {
-    await getEmailProvider().send(to, body, { subject });
+    const email = getEmailProvider();
+    provider = email.name;
+    const { providerRef } = await email.send(to, body, { subject });
+    await logEmail({ to, subject, opts, provider, providerRef, status: "SENT" });
     return true;
   } catch (err) {
-    console.error(`[email] failed to=${maskEmail(to)}: ${err instanceof Error ? err.message : "unknown"}`);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[email] ${opts.purpose} to=${maskEmail(to)} failed: ${message}`);
+    await logEmail({ to, subject, opts, provider, status: "FAILED", error: message.slice(0, 300) });
     return false;
+  }
+}
+
+async function logEmail(e: {
+  to: string;
+  subject: string;
+  opts: { purpose: EmailPurpose; redemptionId?: string };
+  provider: string;
+  providerRef?: string;
+  status: "SENT" | "FAILED";
+  error?: string;
+}) {
+  try {
+    await db.emailLog.create({
+      data: {
+        toEmail: e.to.trim().toLowerCase(),
+        subject: e.subject.slice(0, 200),
+        provider: e.provider,
+        providerRef: e.providerRef,
+        status: e.status,
+        error: e.error,
+        purpose: e.opts.purpose,
+        redemptionId: e.opts.redemptionId,
+      },
+    });
+  } catch (err) {
+    console.error(`[email] could not write EmailLog: ${err instanceof Error ? err.message : "unknown"}`);
   }
 }
 
@@ -98,6 +139,6 @@ export async function notifyCustomer(customerId: string, msg: CustomerMessage): 
   const customer = await db.customer.findUnique({ where: { id: customerId }, select: { email: true, phone: true } });
   if (!customer) return false;
   const sms = await sendSms(customer.phone, msg.sms, { purpose: msg.purpose, redemptionId: msg.redemptionId });
-  const email = await sendEmail(customer.email, msg.emailSubject, msg.email);
+  const email = await sendEmail(customer.email, msg.emailSubject, msg.email, { purpose: msg.purpose, redemptionId: msg.redemptionId });
   return sms || email;
 }

@@ -9,6 +9,7 @@ const NAV: (NavItem & { roles: readonly StaffRole[] })[] = [
   { href: "/admin/partners", label: "Partners", roles: PERMISSIONS.viewPartners },
   { href: "/admin/campaigns", label: "Campaigns", roles: PERMISSIONS.manageCampaigns },
   { href: "/admin/settlements", label: "Settlements", roles: PERMISSIONS.viewSettlements },
+  { href: "/admin/emails", label: "Email", roles: PERMISSIONS.viewEmail },
   { href: "/admin/sms", label: "SMS", roles: PERMISSIONS.viewSms },
   { href: "/admin/staff", label: "Staff", roles: PERMISSIONS.manageStaff },
   { href: "/admin/audit", label: "Audit log", roles: PERMISSIONS.viewAudit },

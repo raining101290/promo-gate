@@ -85,7 +85,7 @@ prisma7.config.ts        # Prisma 7 config (schema path, seed cmd, DATABASE_URL)
   `transitionRedemption`, `transitionSettlement`), inside a Prisma `$transaction`. No other code
   writes those status fields.
 - Side effects fire only after commit (redeem: `after(notifyRedemption)`). SMS only via `sendSms()`: retries,
-  one SmsLog row per attempt, ASCII <=160 chars (`lib/sms-text.ts`). Redemption status: `transitionRedemption`.
+  one SmsLog row per attempt, ASCII <=160 chars (`lib/sms-text.ts`). Email only via `sendEmail()` (EmailLog row, no body). Redemption status: `transitionRedemption`.
 - **External providers sit behind interfaces** in `src/server/providers`
   (`SmsProvider`, `EmailProvider`, `StorageProvider`). Each has a console/local driver for dev,
   selected by env var. Services depend on the interface, never on a vendor SDK.
