@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { OneTimePasswordDialog } from "@/components/staff/one-time-password-dialog";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export function AddStaffDialog() {
         password={created?.password ?? null}
         who={created?.who ?? ""}
         onDone={() => {
+          toast.success(`${created?.who ?? "Staff member"} added. Share the one-time password with them securely.`);
           setCreated(null);
           router.refresh();
         }}

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { selectClass } from "@/components/staff/form-styles";
 import { Button } from "@/components/ui/button";
@@ -23,10 +24,8 @@ export function PartnerForm({ initial, partnerId }: { initial: PartnerFormValues
   const [v, setV] = useState(initial);
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   const set = (k: keyof PartnerFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setSaved(false);
     setV((p) => ({ ...p, [k]: e.target.value }));
   };
 
@@ -51,9 +50,10 @@ export function PartnerForm({ initial, partnerId }: { initial: PartnerFormValues
       const data = (await res.json()) as { ok: boolean; id?: string; error?: string; fieldErrors?: Errors };
       if (data.ok) {
         if (partnerId) {
-          setSaved(true);
+          toast.success("Partner saved.");
           router.refresh();
         } else {
+          toast.success("Partner created. Add its branches next.");
           router.push(`/admin/partners/${data.id}`);
         }
       } else {
@@ -119,7 +119,6 @@ export function PartnerForm({ initial, partnerId }: { initial: PartnerFormValues
         <Button type="submit" disabled={pending}>
           {pending ? "Saving…" : partnerId ? "Save partner" : "Create partner"}
         </Button>
-        {saved && <span className="text-muted-foreground text-sm">Saved</span>}
       </div>
     </form>
   );

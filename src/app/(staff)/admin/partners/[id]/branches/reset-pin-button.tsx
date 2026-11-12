@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { PinRevealDialog } from "@/components/staff/pin-reveal-dialog";
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,9 @@ export function ResetPinButton({ branchId, branchName }: { branchId: string; bra
       const res = await fetch(`/api/admin/branches/${branchId}/reset-pin`, { method: "POST" });
       const data = (await res.json()) as { ok: boolean; pin?: string; error?: string };
       if (data.ok && data.pin) setPin(data.pin);
-      else window.alert(data.error ?? "Could not reset the PIN.");
+      else toast.error(data.error ?? "Could not reset the PIN.");
     } catch {
-      window.alert("Network error. Try again.");
+      toast.error("Network error. Try again.");
     }
     setPending(false);
   }

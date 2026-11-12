@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { OneTimePasswordDialog } from "@/components/staff/one-time-password-dialog";
 import { Button } from "@/components/ui/button";
@@ -32,14 +33,17 @@ export function StaffRowActions({
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
 
-  async function call(path: string, body: unknown, method: string, confirmText: string) {
+  async function call(path: string, body: unknown, method: string, confirmText: string, successText?: string) {
     if (!window.confirm(confirmText)) return null;
     setPending(true);
     setError(null);
     try {
       const r = await sendJson(path, method, body);
       if (!r.ok) setError(r.error ?? "Something went wrong.");
-      else router.refresh();
+      else {
+        if (successText) toast.success(successText);
+        router.refresh();
+      }
       return r;
     } catch {
       setError("Network error.");
@@ -83,7 +87,13 @@ export function StaffRowActions({
             title={active && lastAdmin ? "Last active admin" : undefined}
             data-testid="toggle-active"
             onClick={() =>
-              void call(`/api/admin/staff/${id}`, { active: !active }, "PATCH", active ? `Deactivate ${name}? They lose access immediately.` : `Reactivate ${name}?`)
+              void call(
+                `/api/admin/staff/${id}`,
+                { active: !active },
+                "PATCH",
+                active ? `Deactivate ${name}? They lose access immediately.` : `Reactivate ${name}?`,
+                active ? `${name} deactivated and signed out.` : `${name} reactivated.`,
+              )
             }
           >
             {active ? "Deactivate" : "Reactivate"}
@@ -112,6 +122,7 @@ export function StaffRowActions({
                 const r = await sendJson(`/api/admin/staff/${id}`, "PATCH", v);
                 if (r.ok) {
                   setEditing(false);
+                  toast.success(isSelf ? "Your details were saved." : `${v.name}'s details were saved.`);
                   router.refresh();
                 }
                 return r;

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,6 +39,7 @@ export function SettlementActions({
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (data.ok) {
+        toast.success(path === "approve" ? `Settlement of ${total} approved.` : `${total} marked as paid. The settlement is closed.`);
         router.refresh();
         setPending(false);
         return;

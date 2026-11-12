@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export function CreateDraftForm({ partnerId, defaultFrom, defaultTo }: { partner
       });
       const data = (await res.json()) as { ok: boolean; settlementId?: string; error?: string };
       if (data.ok && data.settlementId) {
+        toast.success("Draft settlement created. Another finance or admin user must approve it.");
         router.push(`/admin/settlements/${data.settlementId}`);
         return;
       }

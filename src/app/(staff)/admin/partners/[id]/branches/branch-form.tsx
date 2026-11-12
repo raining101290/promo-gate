@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { PinRevealDialog } from "@/components/staff/pin-reveal-dialog";
 import { textareaClass } from "@/components/staff/form-styles";
@@ -36,12 +37,10 @@ export function BranchForm({
   const [errors, setErrors] = useState<Errors>({});
   const [pending, setPending] = useState(false);
   const [created, setCreated] = useState<{ pin: string; name: string } | null>(null);
-  const [saved, setSaved] = useState(false);
 
   const editing = !!branchId;
   const suggestion = suggestBranchCode(partnerName, v.name || "branch");
   const set = (k: keyof BranchFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setSaved(false);
     setV((p) => ({ ...p, [k]: k === "active" ? (e.target as HTMLInputElement).checked : e.target.value }));
   };
 
@@ -60,7 +59,7 @@ export function BranchForm({
       if (!data.ok) setErrors({ ...(data.fieldErrors ?? {}), form: data.error });
       else if (!editing && data.pin) setCreated({ pin: data.pin, name: data.branch?.name ?? v.name });
       else {
-        setSaved(true);
+        toast.success(initial.active && !v.active ? "Branch saved and deactivated. It no longer accepts vouchers." : "Branch saved.");
         router.refresh();
       }
     } catch {
@@ -132,13 +131,13 @@ export function BranchForm({
           <Button type="submit" disabled={pending}>
             {pending ? "Saving…" : editing ? "Save branch" : "Create branch"}
           </Button>
-          {saved && <span className="text-muted-foreground text-sm">Saved</span>}
         </div>
       </form>
       <PinRevealDialog
         pin={created?.pin ?? null}
         branchName={created?.name ?? ""}
         onDone={() => {
+          toast.success(`Branch “${created?.name ?? ""}” created.`);
           setCreated(null);
           router.push(`/admin/partners/${partnerId}`);
           router.refresh();

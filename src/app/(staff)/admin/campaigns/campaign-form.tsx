@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,6 +105,7 @@ export function CampaignForm({ initial, campaignId }: { initial: CampaignFormVal
       });
       const data = (await res.json()) as { ok: boolean; error?: string; fieldErrors?: Errors };
       if (data.ok) {
+        toast.success(campaignId ? "Campaign saved." : "Campaign created.");
         router.push("/admin/campaigns");
         router.refresh();
         return;

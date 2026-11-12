@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,7 @@ export function DeleteAccount({ activeVouchers, redemptions }: { activeVouchers:
       const res = await fetch("/api/me/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm }) });
       const data = (await res.json()) as { ok: boolean; error?: string; redirectTo?: string };
       if (data.ok && data.redirectTo) {
+        toast.success("Your account has been deleted.");
         router.replace(data.redirectTo);
         router.refresh();
         return;

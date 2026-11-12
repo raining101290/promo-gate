@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { textareaClass } from "@/components/staff/form-styles";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,15 @@ export function RedemptionReviewPanel({ redemptionId, hasReceipt, status }: { re
       });
       const data = (await res.json()) as { ok: boolean; error?: string };
       if (data.ok) {
+        toast.success(
+          action === "verify"
+            ? hasReceipt
+              ? "Redemption verified. It will be included in the next settlement."
+              : "Verified without receipt. It will be included in the next settlement."
+            : action === "dispute"
+              ? "Redemption disputed and put on hold."
+              : "Redemption rejected. The partner won't be reimbursed for it.",
+        );
         router.refresh();
         return;
       }

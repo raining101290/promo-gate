@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,8 +22,12 @@ const selectClass =
   "border-input bg-background focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px]";
 
 async function post(url: string, body: unknown) {
-  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-  return (await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }))) as { ok: boolean; error?: string };
+  try {
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    return (await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }))) as { ok: boolean; error?: string };
+  } catch {
+    return { ok: false, error: "Network error. Check your connection and try again." };
+  }
 }
 
 export function ReviewPanel({
@@ -55,6 +60,7 @@ export function ReviewPanel({
         ? await post(`/api/admin/requests/${requestId}/approve`, { campaignId })
         : await post(`/api/admin/requests/${requestId}/reject`, { reasonCode, note: note.trim() || undefined });
     if (res.ok) {
+      toast.success(kind === "approve" ? "Approved. Voucher issued and the customer notified." : "Request rejected. The customer has been notified.");
       router.refresh(); // the page re-renders with the review outcome
       return;
     }

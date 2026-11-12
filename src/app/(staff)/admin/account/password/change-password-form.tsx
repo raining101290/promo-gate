@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export function ChangePasswordForm({ forced }: { forced: boolean }) {
       });
       const data = (await res.json()) as { ok: boolean; error?: string; fieldErrors?: Record<string, string>; redirectTo?: string };
       if (data.ok) {
+        toast.success("Password changed.");
         router.replace(data.redirectTo ?? "/admin");
         router.refresh();
         return;
