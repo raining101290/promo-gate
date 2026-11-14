@@ -17,27 +17,26 @@ export const CUSTOMER_GUIDE: GuidePart[] = [
   {
     id: "get-voucher",
     heading: "Get your voucher",
-    intro: "You need a paid hosting.com invoice. Each paid invoice gets one voucher.",
+    intro: "Eligible hosting.com invoices earn a coffee voucher automatically. There's nothing to fill in.",
     steps: [
       {
-        title: "Claim your voucher",
-        text: "On the home page, enter your **invoice number**, your **email** and your **mobile number**, then tap **Submit invoice**. Use the email and phone on your hosting.com account.",
-        shot: phoneShot("customer-claim", "The Claim your voucher form with invoice number, email and mobile filled in"),
+        title: "Pay your hosting.com invoice",
+        text: "When an eligible invoice is paid, hosting.com emails you that your coffee voucher is ready. Each paid invoice earns one voucher.",
+      },
+      {
+        title: "Log in with that email",
+        text: "Open this site and tap **Log in**. Enter the **email address hosting.com wrote to** and tap **Send code by email**. There is no password to remember.",
+        shot: phoneShot("customer-login", "Log in page asking for the email address"),
       },
       {
         title: "Enter your login code",
-        text: "We send you a 6-digit code. Type it in and tap **Verify and continue**. There is no password to remember.",
+        text: "We email you a 6-digit code. Type it in and tap **Verify and continue**.",
         tip: "The code works for 5 minutes. Check your spam or promotions folder if it doesn't arrive.",
-        shot: phoneShot("customer-code", "The login code screen after submitting the invoice"),
-      },
-      {
-        title: "Wait for approval",
-        text: "Your request shows as **Pending** while our team checks the invoice, usually within one working day. You'll get an email when it's decided.",
-        shot: phoneShot("customer-pending", "My vouchers page with the request marked Pending"),
+        shot: phoneShot("customer-code", "Login code screen"),
       },
       {
         title: "Your voucher is ready",
-        text: "Once approved, the voucher appears under **My vouchers** with its value and expiry date. Log in any time at this site to see it.",
+        text: "After you log in, the voucher appears under **My vouchers** with its value and expiry date. Log in any time at this site to see it.",
         shot: phoneShot("customer-voucher", "My vouchers page showing an active ৳500 voucher"),
       },
       {
@@ -96,6 +95,8 @@ export const CUSTOMER_GUIDE: GuidePart[] = [
 ];
 
 export const CUSTOMER_FAQ: GuideQA[] = [
+  { q: "I paid but didn't get a voucher email.", a: "Only eligible invoices earn a voucher. If you think yours should, contact hosting.com support with your invoice number." },
+  { q: "It says “No voucher found for this email”.", a: "Log in with the email address hosting.com wrote to. That's the address your voucher is linked to." },
   { q: "My login code didn't arrive.", a: "Check spam or promotions, then try again after a minute. You can ask for 3 codes every 15 minutes." },
   { q: "Can I use part of my voucher now and the rest later?", a: "No. A voucher is used once. If your bill is smaller than the voucher, the difference isn't kept." },
   { q: "The page says my bill is too small.", a: "Some vouchers need a minimum bill. Add something to your order or use the voucher another time." },

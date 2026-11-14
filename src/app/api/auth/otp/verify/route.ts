@@ -9,7 +9,7 @@ import { verifyOtp } from "@/server/services/otp";
 const MESSAGES = {
   expired: "This code has expired or was already used. Request a new code.",
   locked: "Too many wrong attempts. Request a new code.",
-  no_customer: "No offers found for this email/phone yet.",
+  no_customer: "No voucher found for this email yet. It appears here once hosting.com emails you that it is ready.",
   rate_limited: "Too many attempts. Please wait 15 minutes and try again.",
 } as const;
 

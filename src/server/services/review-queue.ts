@@ -45,6 +45,7 @@ export async function listOfferRequests({ status, q, page }: QueueFilter) {
         submittedPhone: true,
         createdAt: true,
         reviewedAt: true,
+        source: true,
         reviewedBy: { select: { name: true } },
         customer: { select: { email: true, phone: true } },
       },

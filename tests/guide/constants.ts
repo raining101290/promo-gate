@@ -5,6 +5,8 @@ export const GUIDE = {
   /** Address printed on the standee in the screenshots. */
   publicURL: process.env.GUIDE_PUBLIC_URL ?? "https://perks.cloudhosti.com",
   outbox: "./.outbox-guide.jsonl",
+  upmindMockPort: 3398,
+  upmindCalls: "./.outbox-guide-upmind.jsonl",
   outDir: "public/guide/shots",
   staffPassword: "guide-Staff-password-123",
   staff: {

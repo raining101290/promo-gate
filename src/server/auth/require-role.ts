@@ -96,4 +96,8 @@ export const PERMISSIONS = {
   /** Email delivery log (addresses masked; subjects only, no bodies). */
   viewEmail: ["SUPPORT", "FINANCE", "ADMIN"],
   manageStaff: ["ADMIN"],
+  /** Upmind integration status, inbound log and redemption callbacks (no contact details). */
+  viewUpmind: ["SUPPORT", "FINANCE", "ADMIN"],
+  /** Send a failed Upmind callback again. */
+  retryUpmind: ["ADMIN"],
 } as const satisfies Record<string, readonly StaffRole[]>;

@@ -64,6 +64,7 @@ Open cPanel **Terminal**:
 mkdir -p ~/perks/shared && cd ~/perks/shared
 openssl rand -base64 48   # copy this: SESSION_SECRET
 openssl rand -hex 24      # copy this: CRON_SECRET
+openssl rand -hex 32      # copy this: UPMIND_SECRET (share it with Upmind privately)
 nano .env                 # paste the template below, fill it in, Ctrl+O, Enter, Ctrl+X
 chmod 600 .env
 ```
@@ -83,6 +84,10 @@ EMAIL_FROM="Hosting.com Coffee Campaign <perks@cloudhosti.com>"
 EMAIL_REPLY_TO=support@cloudhosti.com
 
 SMS_DRIVER=off
+
+# Upmind paid-invoice pushes and redemption callbacks (docs/UPMIND-INTEGRATION.md).
+UPMIND_SECRET=paste-the-hex-value
+UPMIND_REDEMPTION_URL=https://the-url-upmind-gives-you
 
 # Receipt photos on this server, outside public_html (must be an absolute path).
 STORAGE_DRIVER=local

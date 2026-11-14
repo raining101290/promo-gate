@@ -9,6 +9,7 @@ const AUTH_CALLS = [
   "getCustomerSession(", // customer session (DB-checked, not deleted)
   "verifyLocalToken(", // HMAC-signed, expiring storage URL
   "authorised(req)", // cron bearer secret
+  "checkValidatedCode(", // Upmind push: HMAC over invoice + email with the shared secret
 ];
 
 /** Public on purpose. Each entry says why it may run without a session. */

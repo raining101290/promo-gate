@@ -69,6 +69,8 @@ export const RATE_LIMITS = {
   staffLogin: { limit: 10, windowMs: 15 * MIN },
   /** Own-password change attempts per staff member (wrong current password guesses). */
   passwordChange: { limit: 5, windowMs: 15 * MIN },
+  /** Wrong validatedCodes on the Upmind endpoint per IP (right ones are never limited). */
+  upmindAuthFailure: { limit: 20, windowMs: 15 * MIN },
   /** Customer data exports per customer. */
   dataExport: { limit: 5, windowMs: 60 * MIN },
 } as const satisfies Record<string, { limit: number; windowMs: number }>;

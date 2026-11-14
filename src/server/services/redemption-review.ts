@@ -174,6 +174,9 @@ export async function getRedemptionForStaff(id: string) {
     },
   });
   if (!r) return null;
-  const signals = (await computeFraudSignals([r])).get(r.id) ?? [];
-  return { ...r, signals };
+  const [signals, upmind] = await Promise.all([
+    computeFraudSignals([r]).then((m) => m.get(r.id) ?? []),
+    db.upmindDelivery.findUnique({ where: { redemptionId: id }, select: { status: true, attempts: true, sentAt: true } }),
+  ]);
+  return { ...r, signals, upmind };
 }

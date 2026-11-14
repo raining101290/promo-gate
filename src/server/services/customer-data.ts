@@ -93,7 +93,7 @@ export async function deleteCustomer(customerId: string) {
       where: { customerId, status: "PENDING" },
       data: { status: "REJECTED", rejectReason: "Customer deleted their account", reviewedAt: now },
     });
-    await tx.offerRequest.updateMany({ where: { customerId }, data: { submittedEmail: "[deleted]", submittedPhone: "[deleted]" } });
+    await tx.offerRequest.updateMany({ where: { customerId }, data: { submittedEmail: "[deleted]", submittedPhone: "[deleted]", customerName: null } });
     await tx.smsLog.updateMany({ where: { toPhone: c.phone }, data: { toPhone: "[deleted]", body: "[deleted]" } });
     await tx.emailLog.updateMany({ where: { toEmail: c.email.toLowerCase() }, data: { toEmail: "[deleted]", subject: "[deleted]" } });
     const otps = await tx.otpCode.deleteMany({ where: { OR: [{ customerId }, { target: c.email }, { target: c.phone }] } });

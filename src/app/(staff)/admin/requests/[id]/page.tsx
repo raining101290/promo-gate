@@ -66,7 +66,15 @@ export default async function ReviewRequestPage({ params }: { params: Promise<{ 
           <h1 className="font-mono text-2xl font-semibold tracking-tight">{request.invoiceNumber}</h1>
           <StatusBadge status={request.status} />
         </div>
-        <p className="text-muted-foreground text-sm">Submitted {formatDhakaDateTime(request.createdAt)} (Dhaka)</p>
+        <p className="text-muted-foreground text-sm">
+          {request.source === "UPMIND" ? "Sent by Upmind (paid invoice)" : "Submitted on the invoice form"} {formatDhakaDateTime(request.createdAt)} (Dhaka)
+        </p>
+        {request.source === "UPMIND" && request.status === "PENDING" && (
+          <p role="note" className="mt-3 max-w-2xl rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
+            Upmind confirmed this invoice is paid, but the voucher couldn&apos;t be issued automatically (see the Upmind page for the reason). Check the
+            contacts, then approve or reject it here. Upmind sends the customer&apos;s voucher email, so tell hosting.com support once it&apos;s decided.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
@@ -78,6 +86,7 @@ export default async function ReviewRequestPage({ params }: { params: Promise<{ 
               </CardHeader>
               <CardContent>
                 <dl>
+                  {request.customerName && <Row label="Name">{request.customerName}</Row>}
                   <Row label="Invoice number">
                     <span className="font-mono">{request.invoiceNumber}</span>
                   </Row>

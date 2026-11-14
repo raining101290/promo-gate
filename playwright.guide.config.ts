@@ -27,6 +27,12 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 240_000,
     // APP_URL only feeds printed links (standee QR) and email links here; dev redirects use the request URL.
-    env: { ...TEST_ENV, APP_URL: GUIDE.publicURL, OUTBOX_FILE: GUIDE.outbox, NEXT_DIST_DIR: ".next-guide" },
+    env: {
+      ...TEST_ENV,
+      APP_URL: GUIDE.publicURL,
+      OUTBOX_FILE: GUIDE.outbox,
+      NEXT_DIST_DIR: ".next-guide",
+      UPMIND_REDEMPTION_URL: `http://127.0.0.1:${GUIDE.upmindMockPort}/upmind`,
+    },
   },
 });

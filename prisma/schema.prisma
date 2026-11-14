@@ -29,6 +29,18 @@ enum OfferType {
   PERCENT
 }
 
+/// Where a voucher request came from: the public invoice form, or a paid-invoice push from Upmind.
+enum RequestSource {
+  FORM
+  UPMIND
+}
+
+enum UpmindDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 enum OfferRequestStatus {
   PENDING
   APPROVED
@@ -161,6 +173,8 @@ model Campaign {
   startsAt         DateTime
   endsAt           DateTime?
   active           Boolean   @default(true)
+  /// Vouchers for Upmind paid-invoice pushes are issued from this campaign (at most one at a time).
+  autoIssue        Boolean   @default(false)
   createdAt        DateTime  @default(now())
 
   vouchers Voucher[]
@@ -176,6 +190,11 @@ model OfferRequest {
   reviewedById   String?
   reviewedAt     DateTime?
   rejectReason   String?
+  source         RequestSource      @default(FORM)
+  /// Name as sent by Upmind (the form doesn't ask for one).
+  customerName   String?
+  /// Upmind's validatedCode for this invoice, echoed back in the redemption callback.
+  upmindCode     String?
   createdAt      DateTime           @default(now())
 
   customer   Customer   @relation(fields: [customerId], references: [id])
@@ -388,6 +407,40 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([actorType, actorId])
+}
+
+// ---------- Upmind integration ----------
+
+/// One row per call Upmind makes to /api/integrations/upmind/vouchers (no contact details stored).
+model UpmindInbound {
+  id             String   @id @default(cuid())
+  invoiceNumber  String?
+  /// issued | already_issued | pending_review | rejected | invalid | unauthorized | conflict
+  outcome        String
+  httpStatus     Int
+  detail         String?
+  offerRequestId String?
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Redemption callback to Upmind, written in the redeem transaction (outbox) and sent after commit, with retries.
+model UpmindDelivery {
+  id            String               @id @default(cuid())
+  redemptionId  String               @unique
+  invoiceNumber String
+  payload       Json
+  status        UpmindDeliveryStatus @default(PENDING)
+  attempts      Int                  @default(0)
+  lastStatus    Int?
+  lastError     String?
+  nextAttemptAt DateTime             @default(now())
+  sentAt        DateTime?
+  createdAt     DateTime             @default(now())
+
+  @@index([status, nextAttemptAt])
+  @@index([createdAt])
 }
 
 // ---------- Infra ----------

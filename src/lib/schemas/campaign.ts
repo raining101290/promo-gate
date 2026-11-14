@@ -41,3 +41,5 @@ export const campaignInputSchema = z
 export type CampaignInput = z.output<typeof campaignInputSchema>;
 
 export const campaignActiveSchema = z.object({ active: z.boolean() });
+/** Mark (or unmark) the campaign Upmind paid-invoice vouchers are issued from. */
+export const campaignAutoIssueSchema = z.object({ autoIssue: z.boolean() });

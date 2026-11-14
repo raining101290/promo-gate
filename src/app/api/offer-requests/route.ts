@@ -2,10 +2,17 @@ import { NextResponse } from "next/server";
 
 import { offerRequestInputSchema } from "@/lib/schemas/offer-request";
 import { getCustomerSession } from "@/server/auth/customer";
+import { invoiceFormEnabled } from "@/server/invoice-form";
 import { clientIp } from "@/server/rate-limit";
 import { submitOfferRequest } from "@/server/services/offer-requests";
 
 export async function POST(req: Request) {
+  if (!invoiceFormEnabled()) {
+    return NextResponse.json(
+      { ok: false, error: "Vouchers are now issued automatically when your hosting.com invoice is paid. Check your email, then log in." },
+      { status: 410 },
+    );
+  }
   const parsed = offerRequestInputSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};

@@ -1,35 +1,46 @@
+import { createHmac } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 
+import { TEST_ENV } from "../support/test-env";
 import { E2E } from "./constants";
 import { readOtp, staffPage } from "./helpers";
 
-test("invoice → approval → redeem at 390px → receipt → verified → settlement paid", async ({ page, browser }) => {
+test("Upmind paid invoice → login → redeem at 390px → Upmind told → receipt → verified → settlement paid", async ({ page, browser, request }) => {
   const run = Date.now().toString().slice(-8);
   const invoice = `E2E-${run}`;
   const email = `e2e-${run}@test.local`;
   const phoneLocal = `017${run}`;
 
-  await test.step("customer submits an invoice and logs in with the emailed code", async () => {
+  await test.step("Upmind pushes the paid invoice; the voucher is issued automatically", async () => {
+    const validatedCode = createHmac("sha256", TEST_ENV.UPMIND_SECRET).update(`${invoice}:${email}`).digest("hex");
+    const res = await request.post("/api/integrations/upmind/vouchers", {
+      data: { customerName: "E2E Customer", email, phone: phoneLocal, invoiceNumber: invoice, validatedCode },
+    });
+    expect(res.status()).toBe(201);
+    expect(await res.json()).toMatchObject({ status: "issued", invoiceNumber: invoice, voucher: { offer: "৳500 off" } });
+    // The public invoice form is off.
+    expect((await request.post("/api/offer-requests", { data: { invoiceNumber: "X-1", email, phone: phoneLocal } })).status()).toBe(410);
+  });
+
+  await test.step("customer logs in with the emailed code and sees the voucher", async () => {
     await page.goto("/");
-    await page.locator("#invoiceNumber").fill(invoice.toLowerCase());
-    await page.locator("#email").fill(email);
-    await page.locator("#phone").fill(phoneLocal);
+    await expect(page.getByTestId("auto-cta")).toBeVisible();
+    await page.goto("/login");
+    await page.locator("#target").fill(email);
     const sentAfter = Date.now();
-    await page.getByRole("button", { name: "Submit invoice" }).click();
-    await expect(page.getByRole("status")).toContainText("Invoice received");
+    await page.getByRole("button", { name: "Send code by email" }).click();
     await page.locator("#code").fill(await readOtp(email, sentAfter));
     await page.getByRole("button", { name: "Verify and continue" }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByTestId("requests")).toContainText(invoice);
-    await expect(page.getByTestId("requests")).toContainText("Pending");
   });
 
   const support = await staffPage(browser, E2E.staff.support);
-  await test.step("support approves the request", async () => {
-    await support.goto(`/admin/requests?status=PENDING&q=${invoice}`);
-    await support.getByRole("link", { name: "Review" }).click();
-    await support.getByTestId("approve").click();
-    await expect(support.getByText("Review outcome")).toBeVisible();
+  await test.step("support sees it approved automatically", async () => {
+    await support.goto(`/admin/requests?status=APPROVED&q=${invoice}`);
+    await expect(support.getByRole("row", { name: new RegExp(invoice) })).toContainText("Automatic");
   });
 
   await test.step("customer redeems at the café: bill 1000 → PIN → success", async () => {
@@ -46,6 +57,18 @@ test("invoice → approval → redeem at 390px → receipt → verified → sett
     await expect(page.getByTestId("cashier-instruction")).toHaveText(/record 500 BDT as payment type “Hosting\.com Voucher”/);
     // No horizontal scrolling at 390px.
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
+
+  await test.step("Upmind is told the voucher was redeemed", async () => {
+    await expect
+      .poll(() => (existsSync(E2E.upmindCalls) ? readFileSync(E2E.upmindCalls, "utf8").trim().split("\n").map((l) => JSON.parse(l)) : []), { timeout: 15_000 })
+      .toEqual([
+        expect.objectContaining({
+          event: "voucher.redeemed",
+          invoiceNumber: invoice,
+          redemption: expect.objectContaining({ branchCode: E2E.branchCode, billAmount: "1000.00", discountAmount: "500.00", customerPaid: "500.00", currency: "BDT" }),
+        }),
+      ]);
   });
 
   await test.step("customer uploads the receipt photo", async () => {

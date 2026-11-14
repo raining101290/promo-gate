@@ -63,8 +63,12 @@ export type ReviewFailure =
 export type ApproveResult = { ok: true; voucherId: string; code: string; expiresAt: Date } | ReviewFailure;
 export type RejectResult = { ok: true } | ReviewFailure;
 
+export type IssueActor = { type: "STAFF"; id: string } | { type: "SYSTEM"; via: "upmind" };
+type IssueResult = ApproveResult & { customerId?: string; offer?: string };
+
 /**
- * Approves a PENDING request and issues its voucher, all in one transaction.
+ * Approves a PENDING request and issues its voucher inside the caller's transaction. Used by staff
+ * approval and by Upmind paid-invoice pushes, so both get the same budget/limit checks and locking.
  *
  * Concurrency: locks the campaign row, then the request row (always in that order, so no deadlocks).
  * - Same request approved twice at once: the second waits on the request lock, then sees APPROVED.
@@ -72,90 +76,92 @@ export type RejectResult = { ok: true } | ReviewFailure;
  *   per-customer checks can't be raced.
  * The unique Voucher.offerRequestId is a last-resort backstop.
  */
+export async function issueVoucher(tx: Prisma.TransactionClient, requestId: string, campaignId: string, actor: IssueActor, now: Date): Promise<IssueResult> {
+  await tx.$queryRaw`SELECT id FROM "Campaign" WHERE id = ${campaignId} FOR UPDATE`;
+  await tx.$queryRaw`SELECT id FROM "OfferRequest" WHERE id = ${requestId} FOR UPDATE`;
+
+  const request = await tx.offerRequest.findUnique({
+    where: { id: requestId },
+    select: { id: true, status: true, customerId: true, invoiceNumber: true },
+  });
+  if (!request) return { ok: false, reason: "not_found" };
+  if (request.status !== "PENDING") return { ok: false, reason: "already_reviewed", status: request.status };
+
+  const campaign = await tx.campaign.findUnique({ where: { id: campaignId } });
+  if (!campaign) return { ok: false, reason: "campaign_not_found" };
+  if (!campaign.active) return { ok: false, reason: "campaign_inactive" };
+  if (campaign.startsAt > now) return { ok: false, reason: "campaign_not_started" };
+  if (campaign.endsAt && campaign.endsAt <= now) return { ok: false, reason: "campaign_ended" };
+
+  const terms = snapshotTerms(campaign);
+
+  if (campaign.totalBudget != null) {
+    const issued = await tx.voucher.aggregate({
+      where: { campaignId, status: { not: "VOID" } },
+      _sum: { faceValue: true },
+    });
+    const used = issued._sum.faceValue ?? 0;
+    if (used + terms.faceValue > campaign.totalBudget) {
+      return { ok: false, reason: "budget_exceeded", remaining: campaign.totalBudget - used, needed: terms.faceValue };
+    }
+  }
+
+  if (campaign.perCustomerLimit != null) {
+    const held = await tx.voucher.count({
+      where: { campaignId, customerId: request.customerId, status: { not: "VOID" } },
+    });
+    if (held >= campaign.perCustomerLimit) {
+      return { ok: false, reason: "customer_limit_reached", limit: campaign.perCustomerLimit };
+    }
+  }
+
+  // Conditional update: a second guard on top of the row lock.
+  const updated = await tx.offerRequest.updateMany({
+    where: { id: requestId, status: "PENDING" },
+    data: { status: "APPROVED", reviewedById: actor.type === "STAFF" ? actor.id : null, reviewedAt: now },
+  });
+  if (updated.count !== 1) return { ok: false, reason: "already_reviewed", status: "APPROVED" };
+
+  const voucher = await tx.voucher.create({
+    data: {
+      offerRequestId: requestId,
+      campaignId,
+      customerId: request.customerId,
+      code: generateVoucherCode(),
+      status: "ACTIVE",
+      issuedAt: now,
+      expiresAt: new Date(now.getTime() + campaign.validityDays * DAY_MS),
+      ...terms,
+    },
+    select: { id: true, code: true, expiresAt: true },
+  });
+
+  await writeAudit(
+    {
+      actorType: actor.type,
+      actorId: actor.type === "STAFF" ? actor.id : "system",
+      action: "offer_request.approved",
+      entityType: "OfferRequest",
+      entityId: requestId,
+      meta: { invoiceNumber: request.invoiceNumber, campaignId, voucherId: voucher.id, faceValue: terms.faceValue, ...(actor.type === "SYSTEM" && { via: actor.via }) },
+    },
+    tx,
+  );
+
+  return {
+    ok: true,
+    voucherId: voucher.id,
+    code: voucher.code,
+    expiresAt: voucher.expiresAt,
+    customerId: request.customerId,
+    offer: offerHeadline(terms),
+  };
+}
+
+/** Staff approval: issues the voucher (see issueVoucher), then tells the customer. */
 export async function approveOfferRequest(requestId: string, campaignId: string, staffId: string): Promise<ApproveResult> {
   const now = new Date();
-
-  const result = await db.$transaction(async (tx): Promise<ApproveResult & { customerId?: string; offer?: string }> => {
-    await tx.$queryRaw`SELECT id FROM "Campaign" WHERE id = ${campaignId} FOR UPDATE`;
-    await tx.$queryRaw`SELECT id FROM "OfferRequest" WHERE id = ${requestId} FOR UPDATE`;
-
-    const request = await tx.offerRequest.findUnique({
-      where: { id: requestId },
-      select: { id: true, status: true, customerId: true, invoiceNumber: true },
-    });
-    if (!request) return { ok: false, reason: "not_found" };
-    if (request.status !== "PENDING") return { ok: false, reason: "already_reviewed", status: request.status };
-
-    const campaign = await tx.campaign.findUnique({ where: { id: campaignId } });
-    if (!campaign) return { ok: false, reason: "campaign_not_found" };
-    if (!campaign.active) return { ok: false, reason: "campaign_inactive" };
-    if (campaign.startsAt > now) return { ok: false, reason: "campaign_not_started" };
-    if (campaign.endsAt && campaign.endsAt <= now) return { ok: false, reason: "campaign_ended" };
-
-    const terms = snapshotTerms(campaign);
-
-    if (campaign.totalBudget != null) {
-      const issued = await tx.voucher.aggregate({
-        where: { campaignId, status: { not: "VOID" } },
-        _sum: { faceValue: true },
-      });
-      const used = issued._sum.faceValue ?? 0;
-      if (used + terms.faceValue > campaign.totalBudget) {
-        return { ok: false, reason: "budget_exceeded", remaining: campaign.totalBudget - used, needed: terms.faceValue };
-      }
-    }
-
-    if (campaign.perCustomerLimit != null) {
-      const held = await tx.voucher.count({
-        where: { campaignId, customerId: request.customerId, status: { not: "VOID" } },
-      });
-      if (held >= campaign.perCustomerLimit) {
-        return { ok: false, reason: "customer_limit_reached", limit: campaign.perCustomerLimit };
-      }
-    }
-
-    // Conditional update: a second guard on top of the row lock.
-    const updated = await tx.offerRequest.updateMany({
-      where: { id: requestId, status: "PENDING" },
-      data: { status: "APPROVED", reviewedById: staffId, reviewedAt: now },
-    });
-    if (updated.count !== 1) return { ok: false, reason: "already_reviewed", status: "APPROVED" };
-
-    const voucher = await tx.voucher.create({
-      data: {
-        offerRequestId: requestId,
-        campaignId,
-        customerId: request.customerId,
-        code: generateVoucherCode(),
-        status: "ACTIVE",
-        issuedAt: now,
-        expiresAt: new Date(now.getTime() + campaign.validityDays * DAY_MS),
-        ...terms,
-      },
-      select: { id: true, code: true, expiresAt: true },
-    });
-
-    await writeAudit(
-      {
-        actorType: "STAFF",
-        actorId: staffId,
-        action: "offer_request.approved",
-        entityType: "OfferRequest",
-        entityId: requestId,
-        meta: { invoiceNumber: request.invoiceNumber, campaignId, voucherId: voucher.id, faceValue: terms.faceValue },
-      },
-      tx,
-    );
-
-    return {
-      ok: true,
-      voucherId: voucher.id,
-      code: voucher.code,
-      expiresAt: voucher.expiresAt,
-      customerId: request.customerId,
-      offer: offerHeadline(terms),
-    };
-  });
+  const result = await db.$transaction((tx) => issueVoucher(tx, requestId, campaignId, { type: "STAFF", id: staffId }, now));
 
   if (result.ok && result.customerId) {
     const offer = result.offer;

@@ -18,7 +18,7 @@ export default async function CustomerGuidePage() {
         lead="From a paid hosting.com invoice to a discounted bill at a partner café, in eleven short steps."
         parts={CUSTOMER_GUIDE}
         faq={CUSTOMER_FAQ}
-        cta={loggedIn ? { href: "/dashboard", label: "See my vouchers" } : { href: "/#submit", label: "Claim your voucher" }}
+        cta={loggedIn ? { href: "/dashboard", label: "See my vouchers" } : { href: "/login", label: "Log in to see my voucher" }}
       />
     </div>
   );

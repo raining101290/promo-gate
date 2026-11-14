@@ -9,14 +9,14 @@ import type { GuideStep } from "./types";
 
 export const JOURNEY: GuideStep[] = [
   {
-    title: "Customer submits an invoice",
-    text: "On the home page the customer enters an invoice number, email and phone. This creates a **Request** with status **Pending**, and the customer signs in with a one-time code.",
-    shot: phoneShot("customer-claim", "Customer's Claim your voucher form"),
+    title: "The customer pays a hosting.com invoice",
+    text: "**Upmind** (hosting.com billing) sends us the paid invoice. We issue a **Voucher** automatically from the campaign marked **Use for Upmind**, and Upmind emails the customer. If it can't be issued automatically, the request waits in **Requests** for support.",
+    shot: deskShot("staff-requests", "Requests list with invoices received from Upmind"),
   },
   {
-    title: "Support approves it",
-    text: "Support checks the invoice in billing and approves it in **Requests**. Approving issues a **Voucher** from a running Campaign and emails the customer.",
-    shot: deskShot("staff-request-review", "Request review page with Approve and Reject"),
+    title: "The customer logs in",
+    text: "The customer logs in with the email hosting.com wrote to, using a one-time code, and sees the voucher.",
+    shot: phoneShot("customer-voucher", "Customer's My vouchers page with an active voucher"),
   },
   {
     title: "Customer redeems at the café",
@@ -43,12 +43,12 @@ export const JOURNEY: GuideStep[] = [
 export const REQUESTS_STEPS: GuideStep[] = [
   {
     title: "Open the Pending queue",
-    text: "**Requests** lists every invoice claim, newest first. Filter by **Pending** to see what still needs a decision, or search by invoice number, email or phone.",
+    text: "**Requests** lists every paid invoice, newest first. Upmind invoices that were issued automatically show **Automatic** under Reviewed by. Filter by **Pending** to see the ones that need you.",
     shot: deskShot("staff-requests", "Requests list filtered to Pending"),
   },
   {
-    title: "Check the invoice in billing",
-    text: "Open **Review**. Confirm in the hosting.com billing system that the invoice exists, is **paid**, and that the email and phone belong to the same customer.",
+    title: "Check why it's waiting",
+    text: "Open **Review**. The yellow note says it came from Upmind; the **Upmind** page shows the reason (for example no campaign chosen, or the phone belongs to another account). Check the email and phone against the customer's hosting.com account.",
     shot: deskShot("staff-request-review", "Request review page with invoice, contacts and previous requests"),
   },
   {
@@ -167,6 +167,14 @@ export const EMAIL_STEPS: GuideStep[] = [
     title: "Search the customer's address",
     text: "Type the full address and click **Filter**. A **Sent** row means the provider accepted it; a **Failed** row shows the provider's reason.",
     shot: deskShot("staff-emails", "Email delivery log"),
+  },
+];
+
+export const UPMIND_STEPS: GuideStep[] = [
+  {
+    title: "Check the status cards",
+    text: "**Upmind** shows whether we're receiving invoices, which campaign vouchers come from, where redemption callbacks go, and how many callbacks are waiting or failed.",
+    shot: deskShot("staff-upmind", "Upmind page with status cards, callbacks and received invoices"),
   },
 ];
 

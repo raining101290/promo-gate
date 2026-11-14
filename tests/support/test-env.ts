@@ -10,4 +10,7 @@ export const TEST_ENV = {
   EMAIL_DRIVER: "file",
   STORAGE_DRIVER: "local",
   STORAGE_LOCAL_DIR: "./.storage-test",
+  UPMIND_SECRET: "test-upmind-secret-0123456789abcdef0123456789",
+  /** tests/support/upmind-mock.ts listens here during e2e runs. */
+  UPMIND_REDEMPTION_URL: "http://127.0.0.1:3399/upmind",
 };

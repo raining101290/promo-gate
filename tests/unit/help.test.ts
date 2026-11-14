@@ -19,6 +19,7 @@ import { FRAUD_RULES } from "@/server/services/fraud-signals";
 import { OTP_MAX_ATTEMPTS, OTP_TTL_MS } from "@/server/services/otp";
 import { RECEIPT_GRACE_MS } from "@/server/services/redemption-review";
 import { PIN_LOCK_MS } from "@/server/services/redemptions";
+import { UPMIND_RETRY_MINUTES } from "@/server/services/upmind";
 import { REMINDER_LEAD_MS } from "@/server/services/voucher-expiry";
 
 const MIN = 60_000;
@@ -81,6 +82,8 @@ describe("knowledge base matches the code", () => {
     expect(RECEIPT_MAX_BYTES).toBe(8 * 1024 * 1024);
     expect(Object.keys(RECEIPT_TYPES).sort()).toEqual(["image/heic", "image/heif", "image/jpeg", "image/png"]);
     expect(RECEIPT_GRACE_MS).toBe(24 * HOUR);
+    expect(UPMIND_RETRY_MINUTES).toEqual([1, 5, 30, 120, 360, 720, 1440]);
+    has("after 1, 5 and 30 minutes, then 2, 6, 12 and 24 hours");
     expect(REMINDER_LEAD_MS).toBe(3 * 24 * HOUR);
     expect(SUCCESS_FRESH_MS).toBe(10 * MIN);
     expect(STAFF_SESSION_MAX_AGE_SECONDS).toBe(12 * 3600);
@@ -137,6 +140,8 @@ describe("knowledge base matches the code", () => {
     expect(row("Create, approve, pay settlements")).toEqual(tick(PERMISSIONS.manageSettlements));
     expect(row("SMS credit & delivery log")).toEqual(tick(PERMISSIONS.viewSms));
     expect(row("Email delivery log")).toEqual(tick(PERMISSIONS.viewEmail));
+    expect(row("Upmind log")).toEqual(tick(PERMISSIONS.viewUpmind));
+    expect(row("Send Upmind callbacks again")).toEqual(tick(PERMISSIONS.retryUpmind));
     expect(row("Audit log")).toEqual(tick(PERMISSIONS.viewAudit));
     expect(row("Manage staff")).toEqual(tick(PERMISSIONS.manageStaff));
   });

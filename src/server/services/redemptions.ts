@@ -11,6 +11,7 @@ import type { Prisma, RedemptionStatus, VoucherStatus } from "@/generated/prisma
 import { db } from "@/server/db";
 import { limit, RATE_LIMITS, resetLimit } from "@/server/rate-limit";
 import { writeAudit } from "@/server/services/audit";
+import { queueUpmindRedemption } from "@/server/services/upmind";
 import { appUrl } from "@/server/env";
 import { notifyCustomer, sendSms } from "@/server/services/notifications";
 import { transitionVoucher } from "@/server/services/vouchers";
@@ -219,6 +220,8 @@ export async function confirmRedemption(
       },
       tx,
     );
+    // Upmind-issued voucher: queue the "redeemed" callback in this transaction (sent after commit).
+    await queueUpmindRedemption(tx, redemption.id);
     return { ok: true, redemptionId: redemption.id } as const;
   });
 

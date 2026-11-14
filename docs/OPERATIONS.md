@@ -8,8 +8,10 @@
 - sends one "expires in 3 days" SMS per voucher (claimed via `Voucher.reminderSentAt` before sending,
   so overlapping runs never double-send; vouchers whose whole validity is ≤ 3 days are skipped).
 
+- retries Upmind redemption callbacks that are due (see docs/UPMIND-INTEGRATION.md).
+
 It is idempotent: run it hourly. It needs `CRON_SECRET` (16+ chars) in the environment; without it the
-route answers 503. Responses: `{ ok, expired, reminded, reminderFailures, ranAt }`.
+route answers 503. Responses: `{ ok, expired, reminded, reminderFailures, ranAt, upmind: { attempted, sent } }`.
 
 ### Vercel Cron
 

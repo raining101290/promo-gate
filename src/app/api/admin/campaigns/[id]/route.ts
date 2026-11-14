@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { campaignActiveSchema, campaignInputSchema } from "@/lib/schemas/campaign";
+import { campaignActiveSchema, campaignAutoIssueSchema, campaignInputSchema } from "@/lib/schemas/campaign";
 import { PERMISSIONS, withStaff } from "@/server/auth/require-role";
-import { setCampaignActive, updateCampaign } from "@/server/services/campaigns";
+import { setCampaignActive, setCampaignAutoIssue, updateCampaign } from "@/server/services/campaigns";
 
 import { validationError } from "../../validation";
 import { badId, readId } from "@/app/api/id-param";
@@ -20,14 +20,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   });
 }
 
-/** Activate / deactivate: { active: boolean } */
+/** Activate / deactivate: { active: boolean }. Upmind auto-issue on/off: { autoIssue: boolean }. */
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   return withStaff(PERMISSIONS.manageCampaigns, async (staff) => {
-    const parsed = campaignActiveSchema.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return NextResponse.json({ ok: false, error: "Expected { active: boolean }" }, { status: 400 });
+    const body = await req.json().catch(() => null);
+    const active = campaignActiveSchema.safeParse(body);
+    const auto = campaignAutoIssueSchema.safeParse(body);
+    if (!active.success && !auto.success) return NextResponse.json({ ok: false, error: "Expected { active: boolean } or { autoIssue: boolean }" }, { status: 400 });
     const id = await readId(params);
     if (!id) return badId();
-    const result = await setCampaignActive(id, parsed.data.active, staff.id);
+    const result = active.success ? await setCampaignActive(id, active.data.active, staff.id) : await setCampaignAutoIssue(id, auto.data!.autoIssue, staff.id);
     if (!result) return NextResponse.json({ ok: false, error: "Campaign not found." }, { status: 404 });
     return NextResponse.json({ ok: true, ...result });
   });

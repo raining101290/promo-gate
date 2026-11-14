@@ -119,7 +119,10 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             ) : (
               rows.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-mono font-medium">{r.invoiceNumber}</TableCell>
+                  <TableCell className="font-mono font-medium">
+                    {r.invoiceNumber}
+                    {r.source === "UPMIND" && <span className="text-muted-foreground block font-sans text-xs font-normal">from Upmind</span>}
+                  </TableCell>
                   <TableCell>
                     <div>{r.submittedEmail}</div>
                     <div className="text-muted-foreground text-xs">
@@ -135,7 +138,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
                   <TableCell>
                     <StatusBadge status={r.status} />
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{r.reviewedBy?.name ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {r.reviewedBy?.name ?? (r.source === "UPMIND" && r.status === "APPROVED" ? "Automatic" : "—")}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Button asChild size="sm" variant={r.status === "PENDING" ? "default" : "outline"}>
                       <Link href={`/admin/requests/${r.id}`}>{r.status === "PENDING" ? "Review" : "View"}</Link>

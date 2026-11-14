@@ -1,7 +1,9 @@
+import { createHmac } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 
 import { expect, test, type Browser, type Locator, type Page } from "@playwright/test";
 
+import { TEST_ENV } from "../support/test-env";
 import { GUIDE } from "./constants";
 
 /**
@@ -64,31 +66,30 @@ test("guide screenshots", async ({ browser }) => {
   const finance = await desk(browser, "finance");
   const admin = await desk(browser, "admin");
 
-  await test.step("customer: claim, log in, wait", async () => {
+  await test.step("Upmind pushes the paid invoice; customer logs in", async () => {
     await me.goto("/");
     await shot(me, "customer-home");
-    await me.locator("#invoiceNumber").fill(c.invoice);
-    await me.locator("#email").fill(c.email);
-    await me.locator("#phone").fill(c.phone);
-    await me.locator("#submit").scrollIntoViewIfNeeded();
-    await me.evaluate(() => document.getElementById("submit")?.scrollIntoView({ block: "start" }));
-    await shot(me, "customer-claim");
+    const validatedCode = createHmac("sha256", TEST_ENV.UPMIND_SECRET).update(`${c.invoice}:${c.email}`).digest("hex");
+    const res = await me.request.post("/api/integrations/upmind/vouchers", {
+      data: { customerName: "Tahmid Ahmed", email: c.email, phone: c.phone, invoiceNumber: c.invoice, validatedCode },
+    });
+    expect(res.status()).toBe(201);
+
+    await me.goto("/login");
+    await me.locator("#target").fill(c.email);
+    await shot(me, "customer-login");
     const sentAfter = Date.now();
-    await me.getByRole("button", { name: "Submit invoice" }).click();
-    await expect(me.getByRole("status")).toContainText("Invoice received");
+    await me.getByRole("button", { name: "Send code by email" }).click();
     await me.locator("#code").fill(await readOtp(c.email, sentAfter));
     await shot(me, "customer-code");
     await me.getByRole("button", { name: "Verify and continue" }).click();
     await expect(me).toHaveURL(/\/dashboard$/);
-    await expect(me.getByTestId("requests")).toContainText("Pending");
-    await shot(me, "customer-pending");
   });
 
-  await test.step("support: approve the request", async () => {
+  await test.step("support: review one that waited", async () => {
     await support.goto("/admin/requests?status=PENDING");
-    await expect(support.getByText(c.invoice)).toBeVisible();
     await shot(support, "staff-requests");
-    await support.getByRole("row", { name: new RegExp(c.invoice) }).getByRole("link", { name: "Review" }).click();
+    await support.getByRole("row", { name: /INV-204401/ }).getByRole("link", { name: "Review" }).click();
     await expect(support.getByTestId("approve")).toBeVisible();
     await shot(support, "staff-request-review");
     await support.getByTestId("approve").click();
@@ -137,6 +138,12 @@ test("guide screenshots", async ({ browser }) => {
     await shot(support, "staff-redemption-review");
     await support.getByTestId("verify").click();
     await expect(support.getByText("Verified by")).toBeVisible();
+  });
+
+  await test.step("admin: Upmind page", async () => {
+    await expect.poll(() => (existsSync(GUIDE.upmindCalls) ? readFileSync(GUIDE.upmindCalls, "utf8").trim().split("\n").length : 0)).toBe(1);
+    await admin.goto("/admin/upmind");
+    await shot(admin, "staff-upmind");
   });
 
   await test.step("customer: verified", async () => {

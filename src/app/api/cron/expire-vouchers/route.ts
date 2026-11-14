@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { retryUpmindDeliveries } from "@/server/services/upmind";
 import { runVoucherExpiry } from "@/server/services/voucher-expiry";
 
 // Scheduling: see "Cron" in CLAUDE.md (Vercel Cron via vercel.json, or system cron with curl).
@@ -21,7 +22,9 @@ async function handle(req: Request) {
   if (auth === "unconfigured") return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured" }, { status: 503 });
   if (!auth) return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   const result = await runVoucherExpiry();
-  return NextResponse.json({ ok: true, ...result }, { headers: { "Cache-Control": "no-store" } });
+  // Same hourly job retries Upmind redemption callbacks that failed.
+  const upmind = await retryUpmindDeliveries();
+  return NextResponse.json({ ok: true, ...result, upmind }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export const GET = handle; // Vercel Cron uses GET

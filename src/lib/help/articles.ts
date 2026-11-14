@@ -9,6 +9,7 @@ import {
   REQUESTS_STEPS,
   SETTLEMENTS_STEPS,
   STAFF_STEPS,
+  UPMIND_STEPS,
 } from "./walkthroughs";
 
 /**
@@ -96,7 +97,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
         blocks: [
           {
             kind: "p",
-            text: "Each row is one invoice a customer submitted. Your job is to confirm in the billing system that the invoice is real, **paid** and belongs to that customer. Approve it to issue a voucher, or reject it with a reason. The list is newest first, and the search box matches invoice number, email or phone.",
+            text: "Each row is one paid invoice. Most arrive **from Upmind** (hosting.com billing) and are approved automatically, shown as **Automatic** under Reviewed by. Your job is the **Pending** ones: Upmind confirmed payment, but the voucher couldn't be issued on its own (no Upmind campaign, budget used up, or the phone belongs to another account). Check the contacts, then approve or reject. The list is newest first, and the search box matches invoice number, email or phone.",
           },
         ],
       },
@@ -524,6 +525,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
                 why: "Optional. Stops one customer collecting many vouchers from the same campaign.",
               },
               {
+                name: "Use for Upmind (button in the list)",
+                why: "Marks the campaign that every Upmind paid-invoice voucher is issued from. Only one campaign at a time; marking another one moves it. With none marked, paid invoices wait in Requests.",
+              },
+              {
                 name: "Starts / Ends (Dhaka time)",
                 why: "Approvals are only allowed inside this window. Ends can be empty for no end date. Vouchers already issued still work until their own expiry.",
               },
@@ -591,6 +596,8 @@ export const HELP_ARTICLES: HelpArticle[] = [
               ["Create, approve, pay settlements", "", "✓", "✓"],
               ["SMS credit & delivery log", "✓", "✓", "✓"],
               ["Email delivery log", "✓", "✓", "✓"],
+              ["Upmind log", "✓", "✓", "✓"],
+              ["Send Upmind callbacks again", "", "", "✓"],
               ["Audit log", "", "", "✓"],
               ["Manage staff", "", "", "✓"],
             ],
@@ -639,7 +646,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
   {
     slug: "playbook-login",
     title: "Customer can't log in",
-    summary: 'No code arrived, code rejected, "No offers found", too many attempts.',
+    summary: 'No code arrived, code rejected, "No voucher found", too many attempts.',
     category: "Customer support",
     roles: ["SUPPORT", "ADMIN"],
     sections: [
@@ -667,9 +674,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
             head: ["Customer says", "Likely cause", "What to do"],
             rows: [
               [
-                '"No offers found for this email/phone"',
-                "They used a contact that isn't on any request, or nothing was submitted yet",
-                "Search Requests by email/phone. Ask them to use the contact they submitted with.",
+                '"No voucher found for this email yet"',
+                "They logged in with a different email than their hosting.com account, or Upmind hasn't sent the invoice yet",
+                "Search Requests by email and invoice number, and check the **Upmind** page. Ask them to log in with the email hosting.com wrote to.",
               ],
               [
                 '"The code never arrived"',
@@ -959,6 +966,10 @@ export const HELP_ARTICLES: HelpArticle[] = [
             kind: "fields",
             items: [
               {
+                name: "Upmind",
+                why: "hosting.com's billing system. It tells us when an invoice is paid (we issue the voucher) and we tell it when the voucher is redeemed.",
+              },
+              {
                 name: "OTP",
                 why: "One-time password: the 6-digit login code customers receive.",
               },
@@ -1169,6 +1180,91 @@ export const HELP_ARTICLES: HelpArticle[] = [
     ],
   },
   {
+    slug: "upmind",
+    title: "Upmind: automatic vouchers",
+    summary: "How paid invoices arrive from Upmind, why one waits in Requests, and what to do when a redemption callback fails.",
+    category: "Reference",
+    roles: ["SUPPORT", "FINANCE", "ADMIN"],
+    screen: "/admin/upmind",
+    sections: [
+      { id: "steps", heading: "Step by step", blocks: [{ kind: "walkthrough", steps: UPMIND_STEPS }] },
+      {
+        id: "flow",
+        heading: "How it works",
+        blocks: [
+          {
+            kind: "steps",
+            items: [
+              "A customer pays an eligible hosting.com invoice. **Upmind** sends us their name, email, phone and invoice number.",
+              "We issue the voucher straight away from the campaign marked **Use for Upmind**, with the usual budget and per-customer checks. The request shows as Approved, reviewed by **Automatic**.",
+              "Upmind emails the customer that the voucher is ready. We don't send our own email for these vouchers.",
+              "The customer logs in here with that email and redeems at a café as usual.",
+              "When the voucher is redeemed, we tell Upmind (a **redemption callback**) with the café, amounts and reference.",
+            ],
+          },
+        ],
+      },
+      {
+        id: "pending",
+        heading: "Why a paid invoice waits in Requests",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Reason on the Upmind page", "What to do"],
+            rows: [
+              ["no campaign is marked “Use for Upmind”", "An admin marks a running campaign in **Campaigns**, then support approves the waiting requests."],
+              ["campaign budget used up", "An admin raises the budget or marks another campaign, then approve."],
+              ["customer limit reached", "The customer already holds the maximum vouchers for that campaign. Reject as already issued, or approve from another campaign if policy allows."],
+              ["the phone belongs to another account", "The email is new but the phone is on an existing account. Check with hosting.com which account is right before approving."],
+            ],
+          },
+          {
+            kind: "note",
+            tone: "warn",
+            text: "Upmind only emails the customer when we answer “issued”. For a request you approve by hand, tell hosting.com support so the customer is informed.",
+          },
+        ],
+      },
+      {
+        id: "callbacks",
+        heading: "Redemption callbacks",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Status", "Meaning"],
+            rows: [
+              ["Sent", "Upmind accepted it."],
+              ["Pending", "Upmind didn't answer or refused it. We retry automatically: after 1, 5 and 30 minutes, then 2, 6, 12 and 24 hours (the hourly job picks them up)."],
+              ["Failed", "Every retry failed. Fix the cause with hosting.com, then an admin clicks **Send again**."],
+            ],
+          },
+          {
+            kind: "p",
+            text: "A callback problem never affects the customer or the café: the redemption is already recorded.",
+          },
+        ],
+      },
+      {
+        id: "received",
+        heading: "Paid invoices received",
+        blocks: [
+          {
+            kind: "table",
+            head: ["Result", "Meaning"],
+            rows: [
+              ["Voucher issued", "New invoice, voucher created."],
+              ["Repeat (already issued)", "Upmind sent the same invoice again. Nothing new was created."],
+              ["Waiting for support", "See the reasons above."],
+              ["Invoice already used", "This invoice number already has a request with a different email."],
+              ["Wrong validatedCode", "The request wasn't signed with our shared secret. Usually a setup mistake at Upmind; repeated ones may be someone guessing."],
+              ["Invalid data", "A field was missing or wrong, e.g. a phone that isn't a Bangladeshi mobile number."],
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "audit-log",
     title: "Audit log",
     summary: "What gets recorded and how to read an entry.",
@@ -1195,7 +1291,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
             kind: "table",
             head: ["Action", "Meaning"],
             rows: [
-              ["offer_request.submitted / approved / rejected", "Invoice claim lifecycle"],
+              ["offer_request.received / submitted / approved / rejected", "Invoice lifecycle (received = sent by Upmind; System approvals are automatic)"],
+              ["campaign.auto_issue_on / auto_issue_off", "Campaign chosen (or unchosen) for Upmind vouchers"],
+              ["upmind.delivery_retried", "Admin sent a redemption callback to Upmind again"],
               ["voucher.redeemed", "PIN accepted at a café"],
               ["voucher.pin_failed / pin_locked", "Wrong PIN typed / voucher locked for 15 min"],
               ["voucher.expired_batch", "Hourly job expired old vouchers"],

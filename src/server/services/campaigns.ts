@@ -85,6 +85,21 @@ export async function setCampaignActive(id: string, active: boolean, staffId: st
   });
 }
 
+/** At most one campaign issues Upmind vouchers: marking one unmarks the others, in one transaction. */
+export async function setCampaignAutoIssue(id: string, autoIssue: boolean, staffId: string) {
+  return db.$transaction(async (tx) => {
+    const found = await tx.campaign.findUnique({ where: { id }, select: { id: true } });
+    if (!found) return null;
+    if (autoIssue) await tx.campaign.updateMany({ where: { autoIssue: true, id: { not: id } }, data: { autoIssue: false } });
+    await tx.campaign.update({ where: { id }, data: { autoIssue } });
+    await writeAudit(
+      { actorType: "STAFF", actorId: staffId, action: autoIssue ? "campaign.auto_issue_on" : "campaign.auto_issue_off", entityType: "Campaign", entityId: id },
+      tx,
+    );
+    return { id, autoIssue };
+  });
+}
+
 function auditMeta(c: CampaignInput) {
   return {
     name: c.name,

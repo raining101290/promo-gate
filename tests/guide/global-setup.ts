@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 
 import { PrismaClient } from "../../src/generated/prisma/client";
 import { resetTestDatabase } from "../support/reset-db";
+import { startUpmindMock } from "../support/upmind-mock";
 import { TEST_DATABASE_URL } from "../support/test-env";
 import { GUIDE } from "./constants";
 
@@ -38,6 +39,7 @@ export default async function globalSetup() {
         totalBudget: 150_000_00,
         startsAt: ago(20 * DAY),
         active: true,
+        autoIssue: true,
       },
     });
     await db.campaign.create({
@@ -95,9 +97,21 @@ export default async function globalSetup() {
           submittedEmail: customer.email,
           submittedPhone: customer.phone,
           status: p.status,
+          source: "UPMIND",
+          customerName: p.name,
+          upmindCode: randomBytes(32).toString("hex"),
           createdAt: ago(p.at),
-          ...(p.status !== "PENDING" && { reviewedById: support.id, reviewedAt: ago(p.at - HOUR) }),
-          ...(p.status === "REJECTED" && { rejectReason: "This invoice is not paid yet" }),
+          // Upmind invoices are approved automatically; support handles the pending/rejected ones.
+          ...(p.status === "APPROVED" && { reviewedAt: ago(p.at) }),
+          ...(p.status === "REJECTED" && { reviewedById: support.id, reviewedAt: ago(p.at - HOUR), rejectReason: "The email or phone doesn't match the invoice" }),
+        },
+      });
+      await db.upmindInbound.create({
+        data: {
+          invoiceNumber: req.invoiceNumber,
+          offerRequestId: req.id,
+          createdAt: ago(p.at),
+          ...(p.status === "PENDING" ? { outcome: "pending_review", httpStatus: 202, detail: "contact_conflict" } : { outcome: p.status === "APPROVED" ? "issued" : "pending_review", httpStatus: p.status === "APPROVED" ? 201 : 202, detail: p.status === "REJECTED" ? "contact_conflict" : null }),
         },
       });
       if (p.status !== "APPROVED") continue;
@@ -119,7 +133,7 @@ export default async function globalSetup() {
       });
       if (!p.redeemed || !p.bill) continue;
       const redeemedAt = ago(p.at - 2 * DAY > 0 ? p.at - 2 * DAY : p.at / 2);
-      await db.redemption.create({
+      const red = await db.redemption.create({
         data: {
           voucherId: voucher.id,
           branchId: p.redeemed === "CLAIMED" ? banani.id : gulshan.id,
@@ -134,8 +148,21 @@ export default async function globalSetup() {
           ...(p.redeemed === "VERIFIED" && { verifiedById: support.id, reviewedAt: new Date(redeemedAt.getTime() + 3 * HOUR) }),
         },
       });
+      await db.upmindDelivery.create({
+        data: {
+          redemptionId: red.id,
+          invoiceNumber: req.invoiceNumber,
+          payload: { event: "voucher.redeemed", invoiceNumber: req.invoiceNumber },
+          status: "SENT",
+          attempts: 1,
+          lastStatus: 200,
+          sentAt: new Date(redeemedAt.getTime() + 2_000),
+          createdAt: redeemedAt,
+        },
+      });
     }
   } finally {
     await db.$disconnect();
   }
+  return startUpmindMock(GUIDE.upmindMockPort, GUIDE.upmindCalls);
 }

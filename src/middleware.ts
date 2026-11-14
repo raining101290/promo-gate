@@ -17,7 +17,7 @@ const isDev = process.env.NODE_ENV !== "production";
 export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
-  if (pathname.startsWith("/api/") && !SAFE_METHODS.has(req.method) && !pathname.startsWith("/api/cron/")) {
+  if (pathname.startsWith("/api/") && !SAFE_METHODS.has(req.method) && !pathname.startsWith("/api/cron/") && !pathname.startsWith("/api/integrations/")) {
     const origin = req.headers.get("origin");
     if (origin && !allowedOrigins(req).has(origin)) {
       return NextResponse.json({ ok: false, error: "Cross-origin request blocked" }, { status: 403 });

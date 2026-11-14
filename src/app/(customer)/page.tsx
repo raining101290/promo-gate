@@ -1,21 +1,31 @@
 import Link from "next/link";
 
 import { SiteHeader } from "@/components/customer/site-header";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCustomerSession } from "@/server/auth/customer";
+import { invoiceFormEnabled } from "@/server/invoice-form";
 import { enabledOtpChannels } from "@/server/otp-channels";
 
 import { SubmitForm } from "./submit-form";
 
-const STEPS = [
+const FORM_STEPS = [
   { title: "Submit your invoice", body: "Enter the number of a paid hosting.com invoice with your email and mobile." },
   { title: "We verify it", body: "Our support team checks the invoice, usually within one working day." },
   { title: "Enjoy your coffee", body: "Show your voucher at a partner café. Scan the counter QR, and the cashier confirms." },
 ];
 
+const AUTO_STEPS = [
+  { title: "Pay your hosting.com invoice", body: "Eligible invoices earn a coffee voucher automatically. There's nothing to fill in." },
+  { title: "Check your email", body: "hosting.com emails you when your voucher is ready." },
+  { title: "Log in and enjoy your coffee", body: "Log in here with that email, then scan the QR at a partner café. The cashier confirms." },
+];
+
 export default async function LandingPage({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   const loggedIn = !!(await getCustomerSession());
   const { deleted } = await searchParams;
+  const formOn = invoiceFormEnabled();
+  const steps = formOn ? FORM_STEPS : AUTO_STEPS;
 
   return (
     <div className="min-h-dvh">
@@ -32,7 +42,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
         </section>
 
         <ol className="mt-6 space-y-3">
-          {STEPS.map((step, i) => (
+          {steps.map((step, i) => (
             <li key={step.title} className="flex gap-3">
               <span className="bg-primary text-primary-foreground flex size-7 shrink-0 items-center justify-center rounded-full text-sm font-semibold">
                 {i + 1}
@@ -50,22 +60,38 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
           </Link>
         </p>
 
-        <Card className="mt-8" id="submit">
-          <CardHeader>
-            <CardTitle>Claim your voucher</CardTitle>
-            <CardDescription>One voucher per paid invoice.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <SubmitForm channels={enabledOtpChannels()} />
-          </CardContent>
-        </Card>
+        {formOn ? (
+          <>
+            <Card className="mt-8" id="submit">
+              <CardHeader>
+                <CardTitle>Claim your voucher</CardTitle>
+                <CardDescription>One voucher per paid invoice.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SubmitForm channels={enabledOtpChannels()} />
+              </CardContent>
+            </Card>
 
-        <p className="text-muted-foreground mt-6 text-center text-sm">
-          Already submitted?{" "}
-          <Link href={loggedIn ? "/dashboard" : "/login"} className="text-foreground font-medium underline underline-offset-4">
-            {loggedIn ? "See your vouchers" : "Log in to see your vouchers"}
-          </Link>
-        </p>
+            <p className="text-muted-foreground mt-6 text-center text-sm">
+              Already submitted?{" "}
+              <Link href={loggedIn ? "/dashboard" : "/login"} className="text-foreground font-medium underline underline-offset-4">
+                {loggedIn ? "See your vouchers" : "Log in to see your vouchers"}
+              </Link>
+            </p>
+          </>
+        ) : (
+          <Card className="mt-8" id="start" data-testid="auto-cta">
+            <CardHeader>
+              <CardTitle>Got the email from hosting.com?</CardTitle>
+              <CardDescription>Log in with the same email address to see your voucher. We&apos;ll send you a one-time code; no password needed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild className="h-12 w-full text-base">
+                <Link href={loggedIn ? "/dashboard" : "/login"}>{loggedIn ? "See my vouchers" : "Log in to see my voucher"}</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

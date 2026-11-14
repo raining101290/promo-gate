@@ -12,8 +12,10 @@ branch PIN on the customer's phone; the café records it as POS payment type "Ho
 - Coffee shop staff have **no accounts**. Their only touchpoint is the branch PIN.
 
 ## Core flow
-1. Customer submits invoice number + email + phone -> `OfferRequest` (PENDING).
-2. Support approves or rejects. On approve, a `Voucher` is issued from a `Campaign`.
+1. Upmind (hosting.com billing) POSTs each paid invoice to `/api/integrations/upmind/vouchers` (`services/upmind.ts`,
+   spec `docs/UPMIND-INTEGRATION.md`) -> `OfferRequest` (source UPMIND) + `Voucher` from the `autoIssue` campaign.
+   Can't auto-issue -> stays PENDING for support. The public invoice form is off unless `INVOICE_FORM=on`.
+2. Support approves or rejects PENDING requests. Redeeming an Upmind voucher queues an `UpmindDelivery` callback.
 3. Customer logs in with OTP and sees active vouchers.
 4. Customer scans the branch QR (`/r/[branchCode]`), enters the bill amount, and the cashier enters
    the branch PIN -> `Redemption` created, voucher marked REDEEMED, SMS sent to the branch.

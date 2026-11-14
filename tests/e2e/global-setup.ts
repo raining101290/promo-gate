@@ -5,10 +5,11 @@ import bcrypt from "bcryptjs";
 
 import { PrismaClient } from "../../src/generated/prisma/client";
 import { resetTestDatabase } from "../support/reset-db";
+import { startUpmindMock } from "../support/upmind-mock";
 import { TEST_DATABASE_URL } from "../support/test-env";
 import { E2E } from "./constants";
 
-/** Fresh test DB + the fixtures the happy path needs (staff, one café branch, one active campaign). */
+/** Fresh test DB + the fixtures the happy path needs (staff, one café branch, the Upmind campaign). Returns teardown. */
 export default async function globalSetup() {
   resetTestDatabase();
   rmSync(E2E.outbox, { force: true });
@@ -25,7 +26,7 @@ export default async function globalSetup() {
       ],
     });
     await db.campaign.create({
-      data: { name: "E2E Launch ৳500", offerType: "FIXED", value: 500_00, validityDays: 30, startsAt: new Date(Date.now() - 86_400_000), active: true },
+      data: { name: "E2E Launch ৳500", offerType: "FIXED", value: 500_00, validityDays: 30, startsAt: new Date(Date.now() - 86_400_000), active: true, autoIssue: true },
     });
     const partner = await db.partner.create({
       data: { name: E2E.partnerName, contactName: "Owner", contactPhone: "+8801700000001", payoutMethod: "BKASH", payoutAccount: "+8801700000001" },
@@ -44,4 +45,5 @@ export default async function globalSetup() {
   } finally {
     await db.$disconnect();
   }
+  return startUpmindMock(E2E.upmindMockPort, E2E.upmindCalls);
 }

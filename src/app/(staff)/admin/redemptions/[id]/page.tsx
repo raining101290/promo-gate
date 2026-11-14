@@ -99,6 +99,17 @@ export default async function RedemptionDetailPage({ params }: { params: Promise
                 </Row>
                 <Row label="Customer paid">{formatBDT(r.customerPaid)}</Row>
                 <Row label="POS receipt no.">{r.posReceiptNo ?? <span className="text-muted-foreground">not given</span>}</Row>
+                {r.upmind && (
+                  <Row label="Upmind told">
+                    <Link href="/admin/upmind" className="underline underline-offset-4" data-testid="upmind-callback">
+                      {r.upmind.status === "SENT" && r.upmind.sentAt
+                        ? `yes, ${formatDhakaDateTime(r.upmind.sentAt)}`
+                        : r.upmind.status === "FAILED"
+                          ? `failed after ${r.upmind.attempts} tries`
+                          : "not yet (retrying)"}
+                    </Link>
+                  </Row>
+                )}
               </dl>
               <p className="text-muted-foreground mt-2 text-xs">
                 Check the receipt shows this bill total and a “Hosting.com Voucher” payment of {formatBDT(r.discountAmount)}.

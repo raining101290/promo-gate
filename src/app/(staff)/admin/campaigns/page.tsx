@@ -11,6 +11,7 @@ import { PERMISSIONS, requireStaffPage } from "@/server/auth/require-role";
 import { listCampaignsWithUsage } from "@/server/services/campaigns";
 
 import { ActiveToggle } from "./active-toggle";
+import { AutoIssueToggle } from "./auto-issue-toggle";
 
 export const metadata = { title: "Campaigns" };
 
@@ -136,6 +137,11 @@ export default async function CampaignsPage() {
                       <div className="flex flex-wrap gap-1">
                         <Badge variant={c.active ? "default" : "secondary"}>{c.active ? "Active" : "Inactive"}</Badge>
                         {window && <Badge variant="outline">{window}</Badge>}
+                        {c.autoIssue && (
+                          <Badge variant="outline" className="border-sky-300 text-sky-900 dark:border-sky-800 dark:text-sky-200" data-testid="auto-issue-badge">
+                            Upmind vouchers
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -143,6 +149,7 @@ export default async function CampaignsPage() {
                         <Button asChild size="sm" variant="outline">
                           <Link href={`/admin/campaigns/${c.id}/edit`}>Edit</Link>
                         </Button>
+                        <AutoIssueToggle id={c.id} on={c.autoIssue} name={c.name} />
                         <ActiveToggle id={c.id} active={c.active} name={c.name} />
                       </div>
                     </TableCell>
